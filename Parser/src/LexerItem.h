@@ -13,7 +13,8 @@
 
 using namespace std;
 
-#define ERROR_LEXER_UNEXPECTED_CHAR		1
+#define ERROR_LEXER_UNEXPECTED_CHAR					1
+#define ERROR_LEXER_UNEXPECTED_CLOSING_BRACE		2
 
 class LexerItem
 {

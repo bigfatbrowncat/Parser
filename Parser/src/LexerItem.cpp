@@ -12,9 +12,46 @@
 
 using namespace std;
 
+enum brace { round, square, curly };
+
+
 void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 {
 	enum state { ident, oper, number, whitespace } curState = whitespace;
+	class braces_stack
+	{
+	private:
+		list<brace> braces;
+	public:
+		void process(char ch)
+		{
+			if (ch == '(') braces.push_back(round);
+			else if (ch == '[') braces.push_back(square);
+			else if (ch == '{') braces.push_back(curly);
+			else if (ch == ')')
+			{
+				if (braces.back() == round)
+					braces.pop_back();
+				else
+					throw ERROR_LEXER_UNEXPECTED_CLOSING_BRACE;
+			}
+			else if (ch == ']')
+			{
+				if (braces.back() == square)
+					braces.pop_back();
+				else
+					throw ERROR_LEXER_UNEXPECTED_CLOSING_BRACE;
+			}
+			else if (ch == '}')
+			{
+				if (braces.back() == curly)
+					braces.pop_back();
+				else
+					throw ERROR_LEXER_UNEXPECTED_CLOSING_BRACE;
+			}
+		}
+	} braces;
+
 	string curItemText;
 
 	unsigned int i = 0;
