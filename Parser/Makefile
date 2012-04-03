@@ -3,7 +3,7 @@
 PROJ = Parser
 
 TARGETNAME = Parser
-OBJECTS = LexerItem Parser
+OBJECTS = Lexer Parser
 INCLUDE = src
 
 # CC macros

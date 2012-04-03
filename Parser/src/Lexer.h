@@ -18,11 +18,11 @@ using namespace std;
 
 enum brace { none, round, square, curly };
 
-class LexerItem
+class LexerTreeItem
 {
 private:
 	string innerText;
-	list<LexerItem> innerItems;
+	list<LexerTreeItem> innerItems;
 	brace outerBraces;
 
 	bool isDigit(char ch)
@@ -77,17 +77,32 @@ private:
 
 	}
 public:
-	LexerItem(string innerText) : innerText(innerText)
+	LexerTreeItem(string innerText) : innerText(innerText)
 	{
 		extractBraces();
 	}
 
 	const string& getInnerText() const { return innerText; }
-	const list<LexerItem>& getInnerItems() const { return innerItems; }
+	const list<LexerTreeItem>& getInnerItems() const { return innerItems; }
 	brace getOuterBraces() const { return outerBraces; }
 
-	void doLexing(list<LexerItem*>& nextIteration);
+	void doLexing(list<LexerTreeItem*>& nextIteration);
 };
 
+class Lexer
+{
+private:
+	LexerTreeItem* root;
+	string code;
+public:
+	Lexer(string code) : root(NULL), code(code) {}
+	~Lexer()
+	{
+		if (root != NULL) delete root;
+	}
+
+	void doLexing();
+	const LexerTreeItem& getRoot() const { return *root; }
+};
 
 #endif /* LEXERITEM_H_ */

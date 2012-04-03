@@ -5,14 +5,16 @@
  *      Author: imizus
  */
 
-#include "LexerItem.h"
+#include "Lexer.h"
 
 #include <list>
 #include <string>
 
 using namespace std;
 
-void LexerItem::doLexing(list<LexerItem*>& nextIteration)
+/* LexerItem */
+
+void LexerTreeItem::doLexing(list<LexerTreeItem*>& nextIteration)
 {
 	enum state { ident, oper, number, whitespace, inbraces } curState = whitespace;
 	class braces_stack
@@ -93,7 +95,7 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 			if (braces.thereAreOpened())
 			{
 				// Braces opened. Saving current item
-				LexerItem li(curItemText);
+				LexerTreeItem li(curItemText);
 				innerItems.push_back(li);
 				nextIteration.push_back(&(innerItems.back()));
 
@@ -109,7 +111,7 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 			else if (isOperator(innerText[i]))
 			{
 				// Changed to operator. Saving current item
-				LexerItem li(curItemText);
+				LexerTreeItem li(curItemText);
 				innerItems.push_back(li);
 				nextIteration.push_back(&(innerItems.back()));
 
@@ -120,7 +122,7 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 			else if (isWhitespace(innerText[i]))
 			{
 				// Identifier ended. Saving it
-				LexerItem li(curItemText);
+				LexerTreeItem li(curItemText);
 				innerItems.push_back(li);
 				nextIteration.push_back(&(innerItems.back()));
 
@@ -136,7 +138,7 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 			if (braces.thereAreOpened())
 			{
 				// Braces opened. Saving current item
-				LexerItem li(curItemText);
+				LexerTreeItem li(curItemText);
 				innerItems.push_back(li);
 				nextIteration.push_back(&(innerItems.back()));
 
@@ -152,7 +154,7 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 			else if (isLetter(innerText[i]) || innerText[i] == '_')
 			{
 				// Changed to identifier. Saving current item
-				LexerItem li(curItemText);
+				LexerTreeItem li(curItemText);
 				innerItems.push_back(li);
 				nextIteration.push_back(&(innerItems.back()));
 
@@ -163,7 +165,7 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 			else if (isDigit(innerText[i]))
 			{
 				// Changed to number. Saving current item
-				LexerItem li(curItemText);
+				LexerTreeItem li(curItemText);
 				innerItems.push_back(li);
 				nextIteration.push_back(&(innerItems.back()));
 
@@ -174,7 +176,7 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 			else if (isWhitespace(innerText[i]))
 			{
 				// Identifier ended. Saving it
-				LexerItem li(curItemText);
+				LexerTreeItem li(curItemText);
 				innerItems.push_back(li);
 				nextIteration.push_back(&(innerItems.back()));
 
@@ -190,7 +192,7 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 			if (braces.thereAreOpened())
 			{
 				// Braces opened. Saving current item
-				LexerItem li(curItemText);
+				LexerTreeItem li(curItemText);
 				innerItems.push_back(li);
 				nextIteration.push_back(&(innerItems.back()));
 
@@ -206,7 +208,7 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 			else if (isOperator(innerText[i]))
 			{
 				// Changed to operator. Saving current item
-				LexerItem li(curItemText);
+				LexerTreeItem li(curItemText);
 				innerItems.push_back(li);
 				nextIteration.push_back(&(innerItems.back()));
 
@@ -217,7 +219,7 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 			else if (isWhitespace(innerText[i]))
 			{
 				// Number ended. Saving it
-				LexerItem li(curItemText);
+				LexerTreeItem li(curItemText);
 				innerItems.push_back(li);
 				nextIteration.push_back(&(innerItems.back()));
 
@@ -235,7 +237,7 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 			if (!braces.thereAreOpened())
 			{
 				// Braces closed. Saving current item
-				LexerItem li(curItemText);
+				LexerTreeItem li(curItemText);
 				innerItems.push_back(li);
 				nextIteration.push_back(&(innerItems.back()));
 
@@ -250,8 +252,43 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 	// Saving the last lexer item
 	if (curItemText != "")
 	{
-		LexerItem li(curItemText);
+		LexerTreeItem li(curItemText);
 		innerItems.push_back(li);
 		nextIteration.push_back(&(innerItems.back()));
 	}
+
+	// Checking: if we have only one inner item - it is our copy
+	if (innerItems.size() == 1)
+	{
+		// So we're removing it
+		nextIteration.remove(&innerItems.front());
+		innerItems.clear();
+	}
+}
+
+/* Lexer */
+
+void Lexer::doLexing()
+{
+	list<LexerTreeItem*> wave;
+
+	if (root != NULL) delete root;
+	root = new LexerTreeItem(code);
+
+	root->doLexing(wave);
+
+	do
+	{
+		list<LexerTreeItem*> newWave;
+		for (list<LexerTreeItem*>::const_iterator iter = wave.begin(); iter != wave.end(); iter++)
+		{
+			list<LexerTreeItem*> wavePart;
+			(*iter)->doLexing(wavePart);
+
+			newWave.merge(wavePart);
+		}
+		wave = newWave;
+	}
+	while (wave.size() > 0);
+
 }

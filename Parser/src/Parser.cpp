@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "LexerItem.h"
+#include "Lexer.h"
 
 #include <list>
 #include <string>
@@ -62,45 +62,45 @@ static const char* test_name;
 
 TEST_FUNCTION(single_digit)
 {
-	LexerItem lit("1");
-	list<LexerItem*> nextLevel;
+	LexerTreeItem lit("1");
+	list<LexerTreeItem*> nextLevel;
 	lit.doLexing(nextLevel);
 
-	TEST_ASSERT(nextLevel.size() == 1, "size of '1' lexer items is not 1");
-	list<LexerItem>::const_iterator inners = lit.getInnerItems().begin();
-	TEST_ASSERT((*inners++).getInnerText() == "1", "first item isn't '1'");
+	TEST_ASSERT(nextLevel.size() == 0, "size of '1' lexer items is not 0");
+
+	TEST_ASSERT(lit.getInnerText() == "1", "inner text isn't '1'");
 }
 
 TEST_FUNCTION(single_letter)
 {
-	LexerItem lit("a");
-	list<LexerItem*> nextLevel;
+	LexerTreeItem lit("a");
+	list<LexerTreeItem*> nextLevel;
 	lit.doLexing(nextLevel);
 
-	TEST_ASSERT(nextLevel.size() == 1, "size of 'a' lexer items is not 1");
-	list<LexerItem>::const_iterator inners = lit.getInnerItems().begin();
-	TEST_ASSERT((*inners++).getInnerText() == "a", "first item isn't 'a'");
+	TEST_ASSERT(nextLevel.size() == 0, "size of 'a' lexer items is not 0");
+
+	TEST_ASSERT(lit.getInnerText() == "a", "inner text isn't 'a'");
 }
 
 TEST_FUNCTION(single_oper)
 {
-	LexerItem lit("+");
-	list<LexerItem*> nextLevel;
+	LexerTreeItem lit("+");
+	list<LexerTreeItem*> nextLevel;
 	lit.doLexing(nextLevel);
 
-	TEST_ASSERT(nextLevel.size() == 1, "size of '+' lexer items is not 1");
-	list<LexerItem>::const_iterator inners = lit.getInnerItems().begin();
-	TEST_ASSERT((*inners++).getInnerText() == "+", "first item isn't '+'");
+	TEST_ASSERT(nextLevel.size() == 0, "size of '+' lexer items is not 0");
+
+	TEST_ASSERT(lit.getInnerText() == "+", "inner text isn't '+'");
 }
 
 TEST_FUNCTION(three_plus_five)
 {
-	LexerItem lit("3 + 5");
-	list<LexerItem*> nextLevel;
+	LexerTreeItem lit("3 + 5");
+	list<LexerTreeItem*> nextLevel;
 	lit.doLexing(nextLevel);
 
 	TEST_ASSERT(nextLevel.size() == 3, "size of '3 + 5' lexer items is not 3");
-	list<LexerItem>::const_iterator inners = lit.getInnerItems().begin();
+	list<LexerTreeItem>::const_iterator inners = lit.getInnerItems().begin();
 	TEST_ASSERT((*inners++).getInnerText() == "3", "first item isn't '3'");
 	TEST_ASSERT((*inners++).getInnerText() == "+", "second item isn't '+'");
 	TEST_ASSERT((*inners++).getInnerText() == "5", "third item isn't '5'");
@@ -108,12 +108,12 @@ TEST_FUNCTION(three_plus_five)
 
 TEST_FUNCTION(something_strange)
 {
-	LexerItem lit("112. 34 + ** /-* -- -5 0.213");
-	list<LexerItem*> nextLevel;
+	LexerTreeItem lit("112. 34 + ** /-* -- -5 0.213");
+	list<LexerTreeItem*> nextLevel;
 	lit.doLexing(nextLevel);
 
 	TEST_ASSERT(nextLevel.size() == 9, "size of '112. 34 + ** /-* -- -5 0.213' lexer items is not 9");
-	list<LexerItem>::const_iterator inners = lit.getInnerItems().begin();
+	list<LexerTreeItem>::const_iterator inners = lit.getInnerItems().begin();
 	TEST_ASSERT((*inners++).getInnerText() == "112.", "first item isn't '112.'");
 	TEST_ASSERT((*inners++).getInnerText() == "34", "second item isn't '34'");
 	TEST_ASSERT((*inners++).getInnerText() == "+", "third item isn't '+'");
@@ -126,8 +126,8 @@ TEST_FUNCTION(something_strange)
 }
 TEST_FUNCTION(empty)
 {
-	LexerItem lit("");
-	list<LexerItem*> nextLevel;
+	LexerTreeItem lit("");
+	list<LexerTreeItem*> nextLevel;
 	lit.doLexing(nextLevel);
 
 	TEST_ASSERT(nextLevel.size() == 0, "size of empty value lexer items is not 0");
@@ -135,12 +135,12 @@ TEST_FUNCTION(empty)
 
 TEST_FUNCTION(c_plus_plus)
 {
-	LexerItem lit("cc ++ + +");
-	list<LexerItem*> nextLevel;
+	LexerTreeItem lit("cc ++ + +");
+	list<LexerTreeItem*> nextLevel;
 	lit.doLexing(nextLevel);
 
 	TEST_ASSERT(nextLevel.size() == 4, "size of 'cc ++ + +' lexer items is not 4");
-	list<LexerItem>::const_iterator inners = lit.getInnerItems().begin();
+	list<LexerTreeItem>::const_iterator inners = lit.getInnerItems().begin();
 	TEST_ASSERT((*inners++).getInnerText() == "cc", "first item isn't 'cc'");
 	TEST_ASSERT((*inners++).getInnerText() == "++", "second item isn't '++'");
 	TEST_ASSERT((*inners++).getInnerText() == "+", "third item isn't '+'");
@@ -149,8 +149,8 @@ TEST_FUNCTION(c_plus_plus)
 
 TEST_FUNCTION(braces)
 {
-	LexerItem lit("a+(qwe - zxc *(qqqq))+[5]");
-	list<LexerItem*> nextLevel;
+	LexerTreeItem lit("a+(qwe - zxc *(qqqq))+[5]");
+	list<LexerTreeItem*> nextLevel;
 	lit.doLexing(nextLevel);
 
 /*	for (list<LexerItem*>::iterator iter = nextLevel.begin(); iter != nextLevel.end(); iter++)
@@ -160,7 +160,7 @@ TEST_FUNCTION(braces)
 	}*/
 
 	TEST_ASSERT(nextLevel.size() == 5, "size of 'a+(qwe - zxc *(qqqq))+[5]' lexer items is not 3");
-	list<LexerItem>::const_iterator inners = lit.getInnerItems().begin();
+	list<LexerTreeItem>::const_iterator inners = lit.getInnerItems().begin();
 
 	TEST_ASSERT((*inners).getOuterBraces() == none, "there are braces around 1rd item");
 	TEST_ASSERT((*inners++).getInnerText() == "a", "first item isn't 'a'");
@@ -177,6 +177,34 @@ TEST_FUNCTION(braces)
 
 }
 
+TEST_FUNCTION(deep_lexing)
+{
+	Lexer lex("1 *(23 + a[56] )");
+	lex.doLexing();
+
+	const LexerTreeItem& root = lex.getRoot();
+	TEST_ASSERT(root.getInnerItems().size() == 3, "there should be 3 root inner items");
+
+	list<LexerTreeItem>::const_iterator inners = root.getInnerItems().begin();
+	TEST_ASSERT((*inners).getOuterBraces() == none, "there are braces around 1rd item");
+	TEST_ASSERT((*inners++).getInnerText() == "1", "first item isn't '1'");
+	TEST_ASSERT((*inners).getOuterBraces() == none, "there are braces around 2nd item");
+	TEST_ASSERT((*inners++).getInnerText() == "*", "second item isn't '*'");
+
+	const LexerTreeItem& rnd = *inners++;
+	TEST_ASSERT(rnd.getOuterBraces() == round, "there should be round braces around 3rd item");
+	TEST_ASSERT(rnd.getInnerItems().size() == 4, "there should be 4 items inside round braces");
+
+	list<LexerTreeItem>::const_iterator inners2 = rnd.getInnerItems().begin();
+	TEST_ASSERT((*inners2).getOuterBraces() == none, "there are braces around 1rd item inside round braces");
+	TEST_ASSERT((*inners2++).getInnerText() == "23", "first item inside round braces isn't '23'");
+	TEST_ASSERT((*inners2).getOuterBraces() == none, "there are braces around 2nd item inside round braces");
+	TEST_ASSERT((*inners2++).getInnerText() == "+", "second item inside round braces isn't '+'");
+	TEST_ASSERT((*inners2).getOuterBraces() == none, "there are braces around 3rd item inside round braces");
+	TEST_ASSERT((*inners2++).getInnerText() == "a", "third item inside round braces isn't 'a'");
+	TEST_ASSERT((*inners2).getOuterBraces() == square, "there should be square braces around 4rd item inside round braces");
+	TEST_ASSERT((*inners2++).getInnerText() == "56", "4th item inside round braces isn't '56'");
+}
 
 int main()
 {
@@ -190,6 +218,7 @@ int main()
 		TEST_FUNCTION_RUN(c_plus_plus);
 		TEST_FUNCTION_RUN(something_strange);
 		TEST_FUNCTION_RUN(braces);
+		TEST_FUNCTION_RUN(deep_lexing);
 
 		printf("\nAll tests have passed successfully.\n");
 		return EXIT_SUCCESS;
