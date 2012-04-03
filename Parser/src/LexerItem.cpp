@@ -12,12 +12,9 @@
 
 using namespace std;
 
-enum brace { round, square, curly };
-
-
 void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 {
-	enum state { ident, oper, number, whitespace } curState = whitespace;
+	enum state { ident, oper, number, whitespace, inbraces } curState = whitespace;
 	class braces_stack
 	{
 	private:
@@ -50,6 +47,8 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 					throw ERROR_LEXER_UNEXPECTED_CLOSING_BRACE;
 			}
 		}
+
+		bool thereAreOpened() { return braces.size() > 0; }
 	} braces;
 
 	string curItemText;
@@ -57,49 +56,32 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 	unsigned int i = 0;
 	while (i < innerText.length())
 	{
+		braces.process(innerText[i]);
+
 		// Reading the next character
 		if (curState == whitespace)
 		{
-			if (isWhitespace(innerText[i]))
+			if (braces.thereAreOpened())
 			{
-				// do nothing, just pass the whitespace
+				curState = inbraces;
+				curItemText = innerText[i];
+			}
+			else if (isWhitespace(innerText[i]))
+			{
+				// do nothing, just skip the whitespace
 			}
 			else if (isDigit(innerText[i]))
 			{
-				/*if (curItemText != "")
-				{
-					// Saving current item
-					LexerItem li(curItemText);
-					innerItems.push_back(li);
-					nextIteration.push_back(&(innerItems.back()));
-				}*/
-
 				curState = number;
 				curItemText = innerText[i];
 			}
 			else if (isLetter(innerText[i]) || innerText[i] == '_')
 			{
-				/*if (curItemText != "")
-				{
-					// Saving current item
-					LexerItem li(curItemText);
-					innerItems.push_back(li);
-					nextIteration.push_back(&(innerItems.back()));
-				}*/
-
 				curState = ident;
 				curItemText = innerText[i];
 			}
 			else if (isOperator(innerText[i]))
 			{
-				/*if (curItemText != "")
-				{
-					// Saving current item
-					LexerItem li(curItemText);
-					innerItems.push_back(li);
-					nextIteration.push_back(&(innerItems.back()));
-				}*/
-
 				curState = oper;
 				curItemText = innerText[i];
 			}
@@ -108,7 +90,18 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 		}
 		else if (curState == ident)
 		{
-			if (isLetter(innerText[i]) || isDigit(innerText[i]) || innerText[i] == '_')
+			if (braces.thereAreOpened())
+			{
+				// Braces opened. Saving current item
+				LexerItem li(curItemText);
+				innerItems.push_back(li);
+				nextIteration.push_back(&(innerItems.back()));
+
+				curState = inbraces;
+				// Adding first brace char to next item
+				curItemText = innerText[i];
+			}
+			else if (isLetter(innerText[i]) || isDigit(innerText[i]) || innerText[i] == '_')
 			{
 				// Still identifier
 				curItemText += innerText[i];
@@ -140,7 +133,18 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 		}
 		else if (curState == oper)
 		{
-			if (isOperator(innerText[i]))
+			if (braces.thereAreOpened())
+			{
+				// Braces opened. Saving current item
+				LexerItem li(curItemText);
+				innerItems.push_back(li);
+				nextIteration.push_back(&(innerItems.back()));
+
+				curState = inbraces;
+				// Adding first brace char to next item
+				curItemText = innerText[i];
+			}
+			else if (isOperator(innerText[i]))
 			{
 				// Still operator
 				curItemText += innerText[i];
@@ -183,7 +187,18 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 		}
 		else if (curState == number)
 		{
-			if (isDigit(innerText[i]) || innerText[i] == '.')
+			if (braces.thereAreOpened())
+			{
+				// Braces opened. Saving current item
+				LexerItem li(curItemText);
+				innerItems.push_back(li);
+				nextIteration.push_back(&(innerItems.back()));
+
+				curState = inbraces;
+				// Adding first brace char to next item
+				curItemText = innerText[i];
+			}
+			else if (isDigit(innerText[i]) || innerText[i] == '.')
 			{
 				// Still number
 				curItemText += innerText[i];
@@ -212,7 +227,21 @@ void LexerItem::doLexing(list<LexerItem*>& nextIteration)
 			}
 			else
 				throw ERROR_LEXER_UNEXPECTED_CHAR;
+		}
+		else if (curState == inbraces)
+		{
+			curItemText += innerText[i];
 
+			if (!braces.thereAreOpened())
+			{
+				// Braces closed. Saving current item
+				LexerItem li(curItemText);
+				innerItems.push_back(li);
+				nextIteration.push_back(&(innerItems.back()));
+
+				curState = whitespace;
+				curItemText = "";
+			}
 		}
 
 		i++;
