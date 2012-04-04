@@ -206,6 +206,45 @@ TEST_FUNCTION(deep_lexing)
 	TEST_ASSERT((*inners2++).getInnerText() == "56", "4th item inside round braces isn't '56'");
 }
 
+TEST_FUNCTION(extra_opening_brace)
+{
+	try
+	{
+		Lexer lex("2 +  ( (123 - 654 )");
+		lex.doLexing();
+	}
+	catch (int i)
+	{
+		if (i == ERROR_LEXER_MISSING_CLOSING_BRACE)
+		{
+			return;
+		}
+		else
+			throw i;
+	}
+	TEST_ASSERT(false, "there should be an ERROR_LEXER_MISSING_CLOSING_BRACE exception here");
+}
+
+
+TEST_FUNCTION(extra_closing_brace)
+{
+	try
+	{
+		Lexer lex("2 +   (123 - 654 )) ");
+		lex.doLexing();
+	}
+	catch (int i)
+	{
+		if (i == ERROR_LEXER_UNEXPECTED_CLOSING_BRACE)
+		{
+			return;
+		}
+		else
+			throw i;
+	}
+	TEST_ASSERT(false, "there should be an ERROR_LEXER_UNEXPECTED_CLOSING_BRACE exception here");
+}
+
 int main()
 {
 	try
@@ -219,6 +258,8 @@ int main()
 		TEST_FUNCTION_RUN(something_strange);
 		TEST_FUNCTION_RUN(braces);
 		TEST_FUNCTION_RUN(deep_lexing);
+		TEST_FUNCTION_RUN(extra_opening_brace);
+		TEST_FUNCTION_RUN(extra_closing_brace);
 
 		printf("\nAll tests have passed successfully.\n");
 		return EXIT_SUCCESS;
@@ -228,6 +269,10 @@ int main()
 		if (i == -1)
 		{
 			printf("\nTest falure has occured.\n");
+		}
+		else
+		{
+			printf("\nException number %d occured during the tests.\n", i);
 		}
 		return EXIT_FAILURE;
 	}

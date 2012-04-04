@@ -264,6 +264,9 @@ void LexerTreeItem::doLexing(list<LexerTreeItem*>& nextIteration)
 		nextIteration.remove(&innerItems.front());
 		innerItems.clear();
 	}
+
+	if (braces.thereAreOpened())
+		throw ERROR_LEXER_MISSING_CLOSING_BRACE;
 }
 
 /* Lexer */
