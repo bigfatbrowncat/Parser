@@ -90,14 +90,14 @@ public:
 	void doLexing(list<LexerTreeItem*>& nextIteration);
 };
 
-class Lexer
+class LexerTree
 {
 private:
 	LexerTreeItem* root;
 	string code;
 public:
-	Lexer(string code) : root(NULL), code(code) {}
-	~Lexer()
+	LexerTree(string code) : root(NULL), code(code) {}
+	~LexerTree()
 	{
 		if (root != NULL) delete root;
 	}

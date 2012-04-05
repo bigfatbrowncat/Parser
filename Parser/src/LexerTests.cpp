@@ -17,7 +17,7 @@ static const char* test_name;
 #define TEST_FUNCTION(name)	void __TestFunction_##name ()
 #define TEST_FUNCTION_RUN(name)									\
 	test_name = #name;											\
-	printf("Test \"%s\"... ", test_name);				\
+	printf("Test \"%s\"... ", test_name);						\
 	fflush(stdout); 											\
 	__TestFunction_##name();									\
 	printf("passed\n", test_name); 								\
@@ -142,7 +142,7 @@ TEST_FUNCTION(braces)
 
 TEST_FUNCTION(deep_lexing)
 {
-	Lexer lex("1 *(23 + a[56] )");
+	LexerTree lex("1 *(23 + a[56] )");
 	lex.doLexing();
 
 	const LexerTreeItem& root = lex.getRoot();
@@ -173,7 +173,7 @@ TEST_FUNCTION(extra_opening_brace)
 {
 	try
 	{
-		Lexer lex("2 +  ( (123 - 654 )");
+		LexerTree lex("2 +  ( (123 - 654 )");
 		lex.doLexing();
 	}
 	catch (int i)
@@ -193,7 +193,7 @@ TEST_FUNCTION(extra_closing_brace)
 {
 	try
 	{
-		Lexer lex("2 +   (123 - 654 )) ");
+		LexerTree lex("2 +   (123 - 654 )) ");
 		lex.doLexing();
 	}
 	catch (int i)

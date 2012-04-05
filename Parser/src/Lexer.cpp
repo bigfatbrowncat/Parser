@@ -257,10 +257,10 @@ void LexerTreeItem::doLexing(list<LexerTreeItem*>& nextIteration)
 		nextIteration.push_back(&(innerItems.back()));
 	}
 
-	// Checking: if we have only one inner item - it is our copy
-	if (innerItems.size() == 1)
+	// Checking: if we don't have outer braces but we have only one inner item
+	//            and it's without braces too, it is our copy, so we remove it.
+	if (outerBraces == none && innerItems.size() == 1 && innerItems.back().outerBraces == none)
 	{
-		// So we're removing it
 		nextIteration.remove(&innerItems.front());
 		innerItems.clear();
 	}
@@ -271,7 +271,7 @@ void LexerTreeItem::doLexing(list<LexerTreeItem*>& nextIteration)
 
 /* Lexer */
 
-void Lexer::doLexing()
+void LexerTree::doLexing()
 {
 	list<LexerTreeItem*> wave;
 
