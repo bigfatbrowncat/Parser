@@ -3,43 +3,6 @@
 
 #include "Lexer.h"
 
-#include <list>
-#include <string>
-
-using namespace std;
-
-enum ParserOperation
-{
-	LO_ADD, LO_SUBTRACT, LO_MULTIPLY, LO_DIVIDE
-};
-
-class ParserValue
-{
-public:
-	virtual double getValue() = 0;
-};
-
-class ParserConstant
-{
-private:
-	double value;
-public:
-	ParserConstant(double value): value(value) {}
-	virtual double getValue()
-	{
-		return value;
-	}
-};
-
-class ParserItem
-{
-private:
-	list<ParserItem> innerItems;
-	list<ParserOperation> innerOperations;
-
-public:
-};
-
 #define TEST_FAILED					-1
 
 static const char* test_name;
@@ -54,7 +17,7 @@ static const char* test_name;
 #define TEST_FUNCTION(name)	void __TestFunction_##name ()
 #define TEST_FUNCTION_RUN(name)									\
 	test_name = #name;											\
-	printf("Starting test \"%s\"... ", test_name);				\
+	printf("Test \"%s\"... ", test_name);				\
 	fflush(stdout); 											\
 	__TestFunction_##name();									\
 	printf("passed\n", test_name); 								\
@@ -245,21 +208,28 @@ TEST_FUNCTION(extra_closing_brace)
 	TEST_ASSERT(false, "there should be an ERROR_LEXER_UNEXPECTED_CLOSING_BRACE exception here");
 }
 
+void TestLexer()
+{
+	printf("Starting tests for Lexer:\n");
+
+	TEST_FUNCTION_RUN(single_digit);
+	TEST_FUNCTION_RUN(single_letter);
+	TEST_FUNCTION_RUN(single_oper);
+	TEST_FUNCTION_RUN(three_plus_five);
+	TEST_FUNCTION_RUN(empty);
+	TEST_FUNCTION_RUN(c_plus_plus);
+	TEST_FUNCTION_RUN(something_strange);
+	TEST_FUNCTION_RUN(braces);
+	TEST_FUNCTION_RUN(deep_lexing);
+	TEST_FUNCTION_RUN(extra_opening_brace);
+	TEST_FUNCTION_RUN(extra_closing_brace);
+}
+
 int main()
 {
 	try
 	{
-		TEST_FUNCTION_RUN(single_digit);
-		TEST_FUNCTION_RUN(single_letter);
-		TEST_FUNCTION_RUN(single_oper);
-		TEST_FUNCTION_RUN(three_plus_five);
-		TEST_FUNCTION_RUN(empty);
-		TEST_FUNCTION_RUN(c_plus_plus);
-		TEST_FUNCTION_RUN(something_strange);
-		TEST_FUNCTION_RUN(braces);
-		TEST_FUNCTION_RUN(deep_lexing);
-		TEST_FUNCTION_RUN(extra_opening_brace);
-		TEST_FUNCTION_RUN(extra_closing_brace);
+		TestLexer();
 
 		printf("\nAll tests have passed successfully.\n");
 		return EXIT_SUCCESS;
@@ -274,6 +244,6 @@ int main()
 		{
 			printf("\nException number %d occured during the tests.\n", i);
 		}
-		return EXIT_FAILURE;
 	}
+	return EXIT_FAILURE;
 }

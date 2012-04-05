@@ -2,9 +2,14 @@
 
 PROJ = Parser
 
-TARGETNAME = Parser
-OBJECTS = Lexer Parser
+OBJECTS = Lexer
 INCLUDE = src
+
+TARGETNAME = Parser
+TARGET_OBJECTS = Main
+
+TESTERNAME = Test
+TESTER_OBJECTS = LexerTests
 
 # CC macros
 COMMON_CFLAGS = -static-libgcc
