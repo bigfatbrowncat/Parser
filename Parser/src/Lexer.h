@@ -17,7 +17,7 @@ using namespace std;
 #define ERROR_LEXER_UNEXPECTED_CLOSING_BRACE		2
 #define ERROR_LEXER_MISSING_CLOSING_BRACE			3
 
-enum brace { none, round, square, curly };
+enum brace { BR_NONE, BR_ROUND, BR_SQUARE, BR_CURLY };
 
 class LexerTreeItem
 {
@@ -53,24 +53,24 @@ private:
 
 	void extractBraces()
 	{
-		outerBraces = none;
+		outerBraces = BR_NONE;
 		if (innerText.length() > 1)
 		{
 			if (innerText[0] == '(' && innerText[innerText.length() - 1] == ')')
 			{
-				outerBraces = round;
+				outerBraces = BR_ROUND;
 			}
 			else if (innerText[0] == '[' && innerText[innerText.length() - 1] == ']')
 			{
-				outerBraces = square;
+				outerBraces = BR_SQUARE;
 			}
 			else if (innerText[0] == '{' && innerText[innerText.length() - 1] == '}')
 			{
-				outerBraces = curly;
+				outerBraces = BR_CURLY;
 			}
 		}
 
-		if (outerBraces != none)
+		if (outerBraces != BR_NONE)
 		{
 			innerText = innerText.substr(1, innerText.length() - 2);
 		}

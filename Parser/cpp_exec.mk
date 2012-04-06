@@ -31,6 +31,8 @@ clean:
 
 	@echo "[$(PROJ)] Removing object files..."
 	rm -f $(OBJECT_FILES_WITH_PATH)
+	rm -f $(TESTER_OBJECT_FILES_WITH_PATH)
+	rm -f $(TARGET_OBJECT_FILES_WITH_PATH)
 
 	@echo "[$(PROJ)] Removing empty directories..."
 	find $(TARGET) -depth -empty -type d -exec rmdir {} \;

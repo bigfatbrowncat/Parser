@@ -24,26 +24,26 @@ void LexerTreeItem::doLexing(list<LexerTreeItem*>& nextIteration)
 	public:
 		void process(char ch)
 		{
-			if (ch == '(') braces.push_back(round);
-			else if (ch == '[') braces.push_back(square);
-			else if (ch == '{') braces.push_back(curly);
+			if (ch == '(') braces.push_back(BR_ROUND);
+			else if (ch == '[') braces.push_back(BR_SQUARE);
+			else if (ch == '{') braces.push_back(BR_CURLY);
 			else if (ch == ')')
 			{
-				if (braces.back() == round)
+				if (braces.back() == BR_ROUND)
 					braces.pop_back();
 				else
 					throw ERROR_LEXER_UNEXPECTED_CLOSING_BRACE;
 			}
 			else if (ch == ']')
 			{
-				if (braces.back() == square)
+				if (braces.back() == BR_SQUARE)
 					braces.pop_back();
 				else
 					throw ERROR_LEXER_UNEXPECTED_CLOSING_BRACE;
 			}
 			else if (ch == '}')
 			{
-				if (braces.back() == curly)
+				if (braces.back() == BR_CURLY)
 					braces.pop_back();
 				else
 					throw ERROR_LEXER_UNEXPECTED_CLOSING_BRACE;
@@ -259,7 +259,7 @@ void LexerTreeItem::doLexing(list<LexerTreeItem*>& nextIteration)
 
 	// Checking: if we don't have outer braces but we have only one inner item
 	//            and it's without braces too, it is our copy, so we remove it.
-	if (outerBraces == none && innerItems.size() == 1 && innerItems.back().outerBraces == none)
+	if (outerBraces == BR_NONE && innerItems.size() == 1 && innerItems.back().outerBraces == BR_NONE)
 	{
 		nextIteration.remove(&innerItems.front());
 		innerItems.clear();

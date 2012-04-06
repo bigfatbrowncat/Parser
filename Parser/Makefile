@@ -1,15 +1,15 @@
 #################### Macros #####################
 
-PROJ = Parser
+PROJ = Simplex
 
-OBJECTS = Lexer
+OBJECTS = Lexer Parser
 INCLUDE = src
 
-TARGETNAME = Parser
+TARGETNAME = Simplex
 TARGET_OBJECTS = Main
 
 TESTERNAME = Test
-TESTER_OBJECTS = LexerTests
+TESTER_OBJECTS = LexerTests ParserTests TesterMain
 
 # CC macros
 COMMON_CFLAGS = -static-libgcc

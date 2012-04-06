@@ -2,26 +2,8 @@
 #include <stdlib.h>
 
 #include "Lexer.h"
-
-#define TEST_FAILED					-1
-
-static const char* test_name;
-
-#define TEST_ASSERT(b, t)										\
-	if (!(b))													\
-	{															\
-		printf("\n\nTest \"%s\" failed: %s\n", test_name, t);	\
-		throw TEST_FAILED;										\
-	}
-
-#define TEST_FUNCTION(name)	void __TestFunction_##name ()
-#define TEST_FUNCTION_RUN(name)									\
-	test_name = #name;											\
-	printf("Test \"%s\"... ", test_name);						\
-	fflush(stdout); 											\
-	__TestFunction_##name();									\
-	printf("passed\n", test_name); 								\
-	fflush(stdout);
+#include "LexerTests.h"
+#include "tester_tools.h"
 
 TEST_FUNCTION(single_digit)
 {
@@ -125,17 +107,17 @@ TEST_FUNCTION(braces)
 	TEST_ASSERT(nextLevel.size() == 5, "size of 'a+(qwe - zxc *(qqqq))+[5]' lexer items is not 3");
 	list<LexerTreeItem>::const_iterator inners = lit.getInnerItems().begin();
 
-	TEST_ASSERT((*inners).getOuterBraces() == none, "there are braces around 1rd item");
+	TEST_ASSERT((*inners).getOuterBraces() == BR_NONE, "there are braces around 1rd item");
 	TEST_ASSERT((*inners++).getInnerText() == "a", "first item isn't 'a'");
-	TEST_ASSERT((*inners).getOuterBraces() == none, "there are braces around 2nd item");
+	TEST_ASSERT((*inners).getOuterBraces() == BR_NONE, "there are braces around 2nd item");
 	TEST_ASSERT((*inners++).getInnerText() == "+", "second item isn't '+'");
 
-	TEST_ASSERT((*inners).getOuterBraces() == round, "braces around 3rd item aren't round");
+	TEST_ASSERT((*inners).getOuterBraces() == BR_ROUND, "braces around 3rd item aren't round");
 	TEST_ASSERT((*inners++).getInnerText() == "qwe - zxc *(qqqq)", "third item isn't 'qwe - zxc *(qqqq)'");
 
-	TEST_ASSERT((*inners).getOuterBraces() == none, "there are braces around 4th item");
+	TEST_ASSERT((*inners).getOuterBraces() == BR_NONE, "there are braces around 4th item");
 	TEST_ASSERT((*inners++).getInnerText() == "+", "4th item isn't '+'");
-	TEST_ASSERT((*inners).getOuterBraces() == square, "braces around 5th item aren't square");
+	TEST_ASSERT((*inners).getOuterBraces() == BR_SQUARE, "braces around 5th item aren't square");
 	TEST_ASSERT((*inners++).getInnerText() == "5", "5th item isn't '5'");
 
 }
@@ -149,23 +131,23 @@ TEST_FUNCTION(deep_lexing)
 	TEST_ASSERT(root.getInnerItems().size() == 3, "there should be 3 root inner items");
 
 	list<LexerTreeItem>::const_iterator inners = root.getInnerItems().begin();
-	TEST_ASSERT((*inners).getOuterBraces() == none, "there are braces around 1rd item");
+	TEST_ASSERT((*inners).getOuterBraces() == BR_NONE, "there are braces around 1rd item");
 	TEST_ASSERT((*inners++).getInnerText() == "1", "first item isn't '1'");
-	TEST_ASSERT((*inners).getOuterBraces() == none, "there are braces around 2nd item");
+	TEST_ASSERT((*inners).getOuterBraces() == BR_NONE, "there are braces around 2nd item");
 	TEST_ASSERT((*inners++).getInnerText() == "*", "second item isn't '*'");
 
 	const LexerTreeItem& rnd = *inners++;
-	TEST_ASSERT(rnd.getOuterBraces() == round, "there should be round braces around 3rd item");
+	TEST_ASSERT(rnd.getOuterBraces() == BR_ROUND, "there should be round braces around 3rd item");
 	TEST_ASSERT(rnd.getInnerItems().size() == 4, "there should be 4 items inside round braces");
 
 	list<LexerTreeItem>::const_iterator inners2 = rnd.getInnerItems().begin();
-	TEST_ASSERT((*inners2).getOuterBraces() == none, "there are braces around 1rd item inside round braces");
+	TEST_ASSERT((*inners2).getOuterBraces() == BR_NONE, "there are braces around 1rd item inside round braces");
 	TEST_ASSERT((*inners2++).getInnerText() == "23", "first item inside round braces isn't '23'");
-	TEST_ASSERT((*inners2).getOuterBraces() == none, "there are braces around 2nd item inside round braces");
+	TEST_ASSERT((*inners2).getOuterBraces() == BR_NONE, "there are braces around 2nd item inside round braces");
 	TEST_ASSERT((*inners2++).getInnerText() == "+", "second item inside round braces isn't '+'");
-	TEST_ASSERT((*inners2).getOuterBraces() == none, "there are braces around 3rd item inside round braces");
+	TEST_ASSERT((*inners2).getOuterBraces() == BR_NONE, "there are braces around 3rd item inside round braces");
 	TEST_ASSERT((*inners2++).getInnerText() == "a", "third item inside round braces isn't 'a'");
-	TEST_ASSERT((*inners2).getOuterBraces() == square, "there should be square braces around 4rd item inside round braces");
+	TEST_ASSERT((*inners2).getOuterBraces() == BR_SQUARE, "there should be square braces around 4rd item inside round braces");
 	TEST_ASSERT((*inners2++).getInnerText() == "56", "4th item inside round braces isn't '56'");
 }
 
@@ -210,7 +192,7 @@ TEST_FUNCTION(extra_closing_brace)
 
 void TestLexer()
 {
-	printf("Starting tests for Lexer:\n");
+	printf("\nStarting tests for Lexer:\n");
 
 	TEST_FUNCTION_RUN(single_digit);
 	TEST_FUNCTION_RUN(single_letter);
@@ -223,27 +205,4 @@ void TestLexer()
 	TEST_FUNCTION_RUN(deep_lexing);
 	TEST_FUNCTION_RUN(extra_opening_brace);
 	TEST_FUNCTION_RUN(extra_closing_brace);
-}
-
-int main()
-{
-	try
-	{
-		TestLexer();
-
-		printf("\nAll tests have passed successfully.\n");
-		return EXIT_SUCCESS;
-	}
-	catch (int i)
-	{
-		if (i == -1)
-		{
-			printf("\nTest falure has occured.\n");
-		}
-		else
-		{
-			printf("\nException number %d occured during the tests.\n", i);
-		}
-	}
-	return EXIT_FAILURE;
 }
