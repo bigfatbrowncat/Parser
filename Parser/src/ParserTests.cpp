@@ -11,7 +11,12 @@ TEST_FUNCTION(parse_simple)
 {
 	LexerTree lex("2.5 + q * (3 - 5 + moo) ");
 	lex.doLexing();
-	ParserTree par(lex);
+
+	map<string, double> vars;
+	vars.insert(pair<string, double>("q", 10.0));
+	vars.insert(pair<string, double>("moo", 3.0));
+
+	ParserTree par(lex, vars);
 
 	const ParserItem& lti = (ParserItem&)par.getRoot();
 

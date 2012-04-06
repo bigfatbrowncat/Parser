@@ -2,6 +2,7 @@
 #define PARSER_H_
 
 #include <list>
+#include <map>
 #include <string>
 #include <stdlib.h>
 
@@ -40,13 +41,13 @@ class ParserVariable : ParserValue
 {
 	friend class ParserTree;
 protected:
+	const map<string, double>& variableValues;
 	string name;
 public:
-	ParserVariable() {}
+	ParserVariable(const map<string, double>& variableValues) : variableValues(variableValues) {}
 	virtual double getValue()
 	{
-		// TODO: implement this
-		return 0;
+		return (variableValues.find(name))->second;
 	}
 	string getName()
 	{
@@ -74,55 +75,13 @@ public:
 
 class ParserTree
 {
-protected:
-	static ParserValue* createParserValue(const LexerTreeItem& ltr)
-	{
-		const list<LexerTreeItem>& lexerItems = ltr.getInnerItems();
-		if (lexerItems.size() == 0)
-		{
-			if (ltr.getInnerText()[0] >= '0' && ltr.getInnerText()[0] <= '9')
-			{
-				ParserConstant* res = new ParserConstant;
-				res->value = atof(ltr.getInnerText().c_str());
-				return res;
-			}
-			else
-			{
-				ParserVariable* res = new ParserVariable;
-				res->name = ltr.getInnerText();
-				return res;
-			}
-		}
-		else if (lexerItems.size() == 1)
-		{
-			return createParserValue(lexerItems.back());
-		}
-		else
-		{
-			ParserItem* res = new ParserItem;
-			for (list<LexerTreeItem>::const_iterator iter = lexerItems.begin(); iter != lexerItems.end(); iter++)
-			{
-				// TODO Check the right order! For example, now it's correct to write "3 4 5 + -" and it would mean "3 + 4 - 5"
-				// TODO Also check if braces are correct
-
-				if ((*iter).getInnerText() == "+")
-					res->innerOperations.push_back(LO_ADD);
-				else if ((*iter).getInnerText() == "-")
-					res->innerOperations.push_back(LO_SUBTRACT);
-				else if ((*iter).getInnerText() == "*")
-					res->innerOperations.push_back(LO_MULTIPLY);
-				else if ((*iter).getInnerText() == "/")
-					res->innerOperations.push_back(LO_DIVIDE);
-				else
-					res->innerItems.push_back(createParserValue(*iter));
-			}
-			return res;
-		}
-	}
 	ParserValue* root;
+protected:
+	const map<string, double>& variableValues;
+	ParserValue* createParserValue(const LexerTreeItem& ltr);
 
 public:
-	ParserTree(const LexerTree& lexerTree);
+	ParserTree(const LexerTree& lexerTree, const map<string, double>& variableValues);
 	~ParserTree();
 	const ParserValue& getRoot() const { return *root; }
 };
