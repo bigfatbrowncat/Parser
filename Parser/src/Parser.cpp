@@ -1,5 +1,7 @@
 #include "Parser.h"
 
+#include <stdio.h>
+
 ParserItem::~ParserItem()
 {
     for (list<ParserValue*>::iterator iter = innerItems.begin(); iter != innerItems.end(); iter++)
@@ -46,16 +48,61 @@ ParserValue* ParserTree::createParserValue(const LexerTreeItem& ltr)
 			// TODO Also check if braces are correct
 
 			if ((*iter).getInnerText() == "+")
-				res->innerOperations.push_back(LO_ADD);
+				res->innerOperations.push_back(PO_ADD);
 			else if ((*iter).getInnerText() == "-")
-				res->innerOperations.push_back(LO_SUBTRACT);
+				res->innerOperations.push_back(PO_SUBTRACT);
 			else if ((*iter).getInnerText() == "*")
-				res->innerOperations.push_back(LO_MULTIPLY);
+				res->innerOperations.push_back(PO_MULTIPLY);
 			else if ((*iter).getInnerText() == "/")
-				res->innerOperations.push_back(LO_DIVIDE);
+				res->innerOperations.push_back(PO_DIVIDE);
+			else if ((*iter).getInnerText() == "^")
+				res->innerOperations.push_back(PO_POWER);
 			else
 				res->innerItems.push_back(createParserValue(*iter));
 		}
 		return res;
+	}
+}
+
+list<CodePosition> ParserTree::createCodeString()
+{
+	list<CodePosition> res;
+	root->pushToCodeString(res);
+	return res;
+}
+
+void ParserItem::pushToCodeString(list<CodePosition>& code)
+{
+	list<ParserOperation> opstack;
+
+	list<ParserOperation>::const_iterator op_iter = innerOperations.begin();
+	list<ParserValue*>::const_iterator itm_iter = innerItems.begin();
+
+	for (int i = 0; i < this->innerOperations.size(); i++)
+	{
+		// Pushing the next operand to the code line
+		(*itm_iter)->pushToCodeString(code);
+
+		// Poping the operators from stack if they have higher priority
+		while (opstack.size() > 0 && operationPriority[*op_iter] <= operationPriority[opstack.back()])
+		{
+			code.push_back(CodePosition::withOperation(opstack.back()));
+			opstack.pop_back();
+		}
+
+		opstack.push_back(*op_iter);
+
+		itm_iter++;
+		op_iter++;
+	}
+
+	// Pushing the last operand to the code line
+	(*itm_iter)->pushToCodeString(code);
+
+	// Poping the remaining operators from stack
+	while (opstack.size() > 0)
+	{
+		code.push_back(CodePosition::withOperation(opstack.back()));
+		opstack.pop_back();
 	}
 }

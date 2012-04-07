@@ -11,16 +11,80 @@
 using namespace std;
 
 class ParserTree;
+class ParserValue;
 
 enum ParserOperation
 {
-	LO_ADD, LO_SUBTRACT, LO_MULTIPLY, LO_DIVIDE
+	PO_ADD = 0,
+	PO_SUBTRACT = 1,
+	PO_MULTIPLY = 2,
+	PO_DIVIDE = 3,
+	PO_POWER = 4
+};
+
+static const int operationPriority[] =
+{
+	0,	// PO_ADD
+	0,	// PO_SUBTRACT
+	1,	// PO_MULTIPLY
+	1,	// PO_DIVIDE
+	2	// PO_POWER
+};
+
+enum CodePositionType
+{
+	CPT_VALUE, CPT_OPERATION
+};
+
+class CodePosition
+{
+private:
+	CodePositionType type;
+	union
+	{
+		ParserOperation operation;
+		ParserValue* value;
+	} content;
+public:
+	CodePosition() {}
+	CodePositionType getType()
+	{
+		return type;
+	}
+
+	const ParserOperation getOperation()
+	{
+		return content.operation;
+	}
+	const ParserValue& getValue()
+	{
+		return *content.value;
+	}
+	static CodePosition withOperation(const ParserOperation& operation)
+	{
+		CodePosition cp;
+		cp.type = CPT_OPERATION;
+		cp.content.operation = operation;
+		return cp;
+	}
+	static CodePosition withValue(ParserValue& value)
+	{
+		CodePosition cp;
+		cp.type = CPT_VALUE;
+		cp.content.value = &value;
+		return cp;
+	}
 };
 
 class ParserValue
 {
+protected:
 public:
-	virtual double getValue() = 0;
+	virtual void pushToCodeString(list<CodePosition>& code)
+	{
+		code.push_back(CodePosition::withValue(*this));
+	}
+	virtual double getValue() const = 0;
 	virtual ~ParserValue() {}
 };
 
@@ -31,7 +95,7 @@ protected:
 	double value;
 public:
 	ParserConstant() {}
-	virtual double getValue()
+	virtual double getValue() const
 	{
 		return value;
 	}
@@ -45,7 +109,7 @@ protected:
 	string name;
 public:
 	ParserVariable(const map<string, double>& variableValues) : variableValues(variableValues) {}
-	virtual double getValue()
+	virtual double getValue() const
 	{
 		return (variableValues.find(name))->second;
 	}
@@ -63,9 +127,10 @@ protected:
 	list<ParserOperation> innerOperations;
 	ParserItem() {}
 public:
+	virtual void pushToCodeString(list<CodePosition>& code);
 	const list<ParserValue*>& getInnerItems() const { return innerItems; }
 	const list<ParserOperation>& getInnerOperations() const { return innerOperations; }
-	virtual double getValue()
+	virtual double getValue() const
 	{
 		// TODO: implement this
 		return 0;
@@ -75,12 +140,14 @@ public:
 
 class ParserTree
 {
+private:
+	list<CodePosition> codeStack;
 	ParserValue* root;
 protected:
 	const map<string, double>& variableValues;
 	ParserValue* createParserValue(const LexerTreeItem& ltr);
-
 public:
+	list<CodePosition> createCodeString();
 	ParserTree(const LexerTree& lexerTree, const map<string, double>& variableValues);
 	~ParserTree();
 	const ParserValue& getRoot() const { return *root; }

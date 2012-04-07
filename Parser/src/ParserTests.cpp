@@ -34,16 +34,74 @@ TEST_FUNCTION(parse_simple)
 
 	TEST_ASSERT(lti.getInnerOperations().size() == 2, "The operations number should be 2");
 	list<ParserOperation>::const_iterator op_iter = lti.getInnerOperations().begin();
-	TEST_ASSERT((*op_iter++) == LO_ADD, "The first operator isn't '+'");
-	TEST_ASSERT((*op_iter++) == LO_MULTIPLY, "The 2nd operator isn't '*'");
+	TEST_ASSERT((*op_iter++) == PO_ADD, "The first operator isn't '+'");
+	TEST_ASSERT((*op_iter++) == PO_MULTIPLY, "The 2nd operator isn't '*'");
 
 
+}
+
+TEST_FUNCTION(code_line)
+{
+	LexerTree* lex = new LexerTree("3 + 4 * 2 / (1 - 5)^2");
+	lex->doLexing();
+
+	map<string, double> vars;
+	ParserTree par(*lex, vars);
+
+	list<CodePosition> cp = par.createCodeString();		// should be '3 4 2 * 1 5 - 2 ^ / +'
+
+	TEST_ASSERT(cp.size() == 11, "Code string length isn't 11");
+
+	list<CodePosition>::iterator iter = cp.begin();
+
+	TEST_ASSERT((*iter).getType() == CPT_VALUE, "The first item should be a value");
+	TEST_ASSERT(abs((*iter++).getValue().getValue() - 3) < 0.0001, "The first item value should be 3");
+
+	TEST_ASSERT((*iter).getType() == CPT_VALUE, "The 2nd item should be a value");
+	TEST_ASSERT(abs((*iter++).getValue().getValue() - 4) < 0.0001, "The 2nd item value should be 4");
+
+	TEST_ASSERT((*iter).getType() == CPT_VALUE, "The 3rd item should be a value");
+	TEST_ASSERT(abs((*iter++).getValue().getValue() - 2) < 0.0001, "The 3rd item value should be 2");
+
+	TEST_ASSERT((*iter).getType() == CPT_OPERATION, "The 4th item should be an operator");
+	TEST_ASSERT((*iter++).getOperation() == PO_MULTIPLY, "The 4th item value should be '*'");
+
+	TEST_ASSERT((*iter).getType() == CPT_VALUE, "The 5th item should be a value");
+	TEST_ASSERT(abs((*iter++).getValue().getValue() - 1) < 0.0001, "The 5th item value should be 1");
+
+	TEST_ASSERT((*iter).getType() == CPT_VALUE, "The 6th item should be a value");
+	TEST_ASSERT(abs((*iter++).getValue().getValue() - 5) < 0.0001, "The 6th item value should be 5");
+
+	TEST_ASSERT((*iter).getType() == CPT_OPERATION, "The 7th item should be an operator");
+	TEST_ASSERT((*iter++).getOperation() == PO_SUBTRACT, "The 7th item value should be '*'");
+
+	TEST_ASSERT((*iter).getType() == CPT_VALUE, "The 8th item should be a value");
+	TEST_ASSERT(abs((*iter++).getValue().getValue() - 2) < 0.0001, "The 8th item value should be 2");
+
+	TEST_ASSERT((*iter).getType() == CPT_OPERATION, "The 9th item should be an operator");
+	TEST_ASSERT((*iter++).getOperation() == PO_POWER, "The 9th item value should be '^'");
+
+	TEST_ASSERT((*iter).getType() == CPT_OPERATION, "The 10th item should be an operator");
+	TEST_ASSERT((*iter++).getOperation() == PO_DIVIDE, "The 10th item value should be '/'");
+
+	TEST_ASSERT((*iter).getType() == CPT_OPERATION, "The 11th item should be an operator");
+	TEST_ASSERT((*iter++).getOperation() == PO_ADD, "The 11th item value should be '+'");
 }
 
 void TestParser()
 {
 	printf("\nStarting tests for Parser:\n");
 
+	LexerTree* lex = new LexerTree("3 + 4 * 2 / (1 - 5)^2");
+	lex->doLexing();
+
+	map<string, double> vars;
+	ParserTree par(*lex, vars);
+
+	list<CodePosition> cp = par.createCodeString();		// should be '3 4 2 * 1 5 - 2 ^ / +'
+
+
 	TEST_FUNCTION_RUN(parse_simple);
+	TEST_FUNCTION_RUN(code_line);
 
 }
