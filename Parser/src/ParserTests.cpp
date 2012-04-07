@@ -99,7 +99,7 @@ TEST_FUNCTION(fractal)
 	for (double c = 0; c < 1; c += 1.0 / 400 / 300)
 	{
 		c_v.setValue(c);
-		x_v.setValue(0);
+		x_v.setValue((d_complex)0);
 		for (int i = 0; i < 10; i++)
 		{
 			x_v.setValue(par.execute());
