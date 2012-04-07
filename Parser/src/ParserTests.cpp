@@ -90,11 +90,35 @@ TEST_FUNCTION(code_line)
 	double value = par.execute();
 }
 
+TEST_FUNCTION(fractal)
+{
+	// Something similar the Mandelbrot calculation
+
+	LexerTree lex("x ^ 2 + c");
+	lex.doLexing();
+
+	map<string, double> vars;
+	vars.insert(pair<string, double>("x", 0));
+	vars.insert(pair<string, double>("c", 0));
+
+	ParserTree par(lex, vars);
+
+	for (double c = 0; c < 1; c += 1.0 / 200 / 150)
+	{
+		vars["c"] = c;
+		vars["x"] = 0;
+		for (int i = 0; i < 10; i++)
+		{
+			vars["x"] = par.execute();
+		}
+	}
+}
+
 void TestParser()
 {
 	printf("\nStarting tests for Parser:\n");
 
 	TEST_FUNCTION_RUN(parse_simple);
 	TEST_FUNCTION_RUN(code_line);
-
+	TEST_FUNCTION_RUN_TIMING(fractal);
 }
