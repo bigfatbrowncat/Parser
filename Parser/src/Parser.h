@@ -47,16 +47,16 @@ private:
 	} content;
 public:
 	CodePosition() {}
-	CodePositionType getType()
+	CodePositionType getType() const
 	{
 		return type;
 	}
 
-	const ParserOperation getOperation()
+	const ParserOperation getOperation() const
 	{
 		return content.operation;
 	}
-	const ParserValue& getValue()
+	const ParserValue& getValue() const
 	{
 		return *content.value;
 	}
@@ -148,6 +148,7 @@ protected:
 	ParserValue* createParserValue(const LexerTreeItem& ltr);
 	void compile();
 public:
+	double execute();
 	const list<CodePosition>& getCode() const { return code; }
 	ParserTree(const LexerTree& lexerTree, const map<string, double>& variableValues);
 	~ParserTree();

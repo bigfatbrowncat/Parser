@@ -1,6 +1,7 @@
 #include "Parser.h"
 
 #include <list>
+#include <math.h>
 #include <stdio.h>
 
 ParserItem::~ParserItem()
@@ -70,6 +71,32 @@ void ParserTree::compile()
 {
 	code.clear();
 	root->pushToCodeString(code);
+}
+
+double ParserTree::execute()
+{
+	list<double> valueStack;
+	for (list<CodePosition>::const_iterator iter = code.begin(); iter != code.end(); iter++)
+	{
+		if ((*iter).getType() == CPT_VALUE)
+		{
+			valueStack.push_back((*iter).getValue().getValue());
+		}
+		else if ((*iter).getType() == CPT_OPERATION)
+		{
+			double b = valueStack.back();
+			valueStack.pop_back();
+			double a = valueStack.back();
+			valueStack.pop_back();
+
+			if ((*iter).getOperation() == PO_ADD) valueStack.push_back(a + b);
+			else if ((*iter).getOperation() == PO_SUBTRACT) valueStack.push_back(a - b);
+			else if ((*iter).getOperation() == PO_MULTIPLY) valueStack.push_back(a * b);
+			else if ((*iter).getOperation() == PO_DIVIDE) valueStack.push_back(a / b);
+			else if ((*iter).getOperation() == PO_POWER) valueStack.push_back(pow(a, b));
+		}
+	}
+	return valueStack.back();
 }
 
 void ParserItem::pushToCodeString(list<CodePosition>& code)

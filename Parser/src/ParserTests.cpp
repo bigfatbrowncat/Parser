@@ -86,6 +86,8 @@ TEST_FUNCTION(code_line)
 
 	TEST_ASSERT((*iter).getType() == CPT_OPERATION, "The 11th item should be an operator");
 	TEST_ASSERT((*iter++).getOperation() == PO_ADD, "The 11th item value should be '+'");
+
+	double value = par.execute();
 }
 
 void TestParser()
