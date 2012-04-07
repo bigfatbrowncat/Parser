@@ -60,7 +60,7 @@ public:
 	{
 		return *content.value;
 	}
-	static CodePosition withOperation(const ParserOperation& operation)
+	static CodePosition withOperation(ParserOperation operation)
 	{
 		CodePosition cp;
 		cp.type = CPT_OPERATION;

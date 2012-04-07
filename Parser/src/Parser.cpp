@@ -1,5 +1,6 @@
 #include "Parser.h"
 
+#include <list>
 #include <stdio.h>
 
 ParserItem::~ParserItem()
