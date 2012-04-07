@@ -4,36 +4,6 @@
 #include <math.h>
 #include <stdio.h>
 
-double BinaryOperator_Add(double a, double b)
-{
-	return a + b;
-}
-double BinaryOperator_Subtract(double a, double b)
-{
-	return a - b;
-}
-double BinaryOperator_Multiply(double a, double b)
-{
-	return a * b;
-}
-double BinaryOperator_Divide(double a, double b)
-{
-	return a / b;
-}
-double BinaryOperator_Power(double a, double b)
-{
-	return pow(a, b);
-}
-static const BinaryOperatorFunction binaryOperatorFunctions[] =
-{
-	&BinaryOperator_Add,
-	&BinaryOperator_Subtract,
-	&BinaryOperator_Multiply,
-	&BinaryOperator_Divide,
-	&BinaryOperator_Power
-};
-
-
 ParserItem::~ParserItem()
 {
     for (list<ParserValue*>::iterator iter = innerItems.begin(); iter != innerItems.end(); iter++)
@@ -103,43 +73,25 @@ void ParserTree::compile()
 	root->pushToCodeString(code);
 }
 
-#define OPT
-
 double ParserTree::execute()
 {
-#ifdef OPT
 	double valueStack[256];
 	int stackTop = 0;
-#else
-	list<double> valueStack;
-#endif
 	for (list<CodePosition>::const_iterator iter = code.begin(); iter != code.end(); iter++)
 	{
 		if ((*iter).getType() == CPT_VALUE)
 		{
-#ifdef OPT
 			valueStack[stackTop] = (*iter).getValue().getValue();
 			stackTop ++;
-#else
-			valueStack.push_back((*iter).getValue().getValue());
-#endif
 		}
 		else if ((*iter).getType() == CPT_OPERATION)
 		{
-#ifdef OPT
 			double b = valueStack[stackTop - 1];
 			double a = valueStack[stackTop - 2];
 			stackTop -= 2;
-#else
-			double b = valueStack.back();
-			valueStack.pop_back();
-			double a = valueStack.back();
-			valueStack.pop_back();
-#endif
 
 			ParserOperation pop = (*iter).getOperation();
 
-#ifdef OPT
 			if (pop == PO_ADD)
 			{
 				valueStack[stackTop] = a + b;
@@ -165,25 +117,9 @@ double ParserTree::execute()
 				valueStack[stackTop] = pow(a, b);
 				stackTop++;
 			}
-#else
-			if (pop == PO_ADD)
-				valueStack.push_back(a + b);
-			else if (pop == PO_SUBTRACT)
-				valueStack.push_back(a - b);
-			else if (pop == PO_MULTIPLY)
-				valueStack.push_back(a * b);
-			else if (pop == PO_DIVIDE)
-				valueStack.push_back(a / b);
-			else if (pop == PO_POWER)
-				valueStack.push_back(pow(a, b));
-#endif
 		}
 	}
-#ifdef OPT
 	return valueStack[stackTop];
-#else
-	return valueStack.back();
-#endif
 }
 
 void ParserItem::pushToCodeString(list<CodePosition>& code)

@@ -32,12 +32,6 @@ static const int operationPriority[] =
 	2	// PO_POWER
 };
 
-
-typedef double (*BinaryOperatorFunction)(double a, double b);
-
-
-
-
 enum CodePositionType
 {
 	CPT_VALUE, CPT_OPERATION
