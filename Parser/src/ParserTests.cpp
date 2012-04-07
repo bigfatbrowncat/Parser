@@ -96,7 +96,7 @@ TEST_FUNCTION(fractal)
 	ParserVariable<d_complex> c_v = par.getVariable("c");
 	ParserVariable<d_complex> x_v = par.getVariable("x");
 
-	for (double c = 0; c < 1; c += 1.0 / 400 / 300)
+	for (double c = 0; c < 1; c += 1.0 / 200 / 150)
 	{
 		c_v.setValue(c);
 		x_v.setValue((d_complex)0);
@@ -112,7 +112,7 @@ TEST_FUNCTION(fractal_native)
 	// Something similar the Mandelbrot calculation
 	// but using native calculation
 
-	for (double c = 0; c < 1; c += 1.0 / 400 / 300)
+	for (double c = 0; c < 1; c += 1.0 / 200 / 150)
 	{
 		d_complex x = 0;
 		for (int i = 0; i < 10; i++)
