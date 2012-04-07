@@ -141,13 +141,14 @@ public:
 class ParserTree
 {
 private:
-	list<CodePosition> codeStack;
+	list<CodePosition> code;
 	ParserValue* root;
 protected:
 	const map<string, double>& variableValues;
 	ParserValue* createParserValue(const LexerTreeItem& ltr);
+	void compile();
 public:
-	list<CodePosition> createCodeString();
+	const list<CodePosition>& getCode() const { return code; }
 	ParserTree(const LexerTree& lexerTree, const map<string, double>& variableValues);
 	~ParserTree();
 	const ParserValue& getRoot() const { return *root; }

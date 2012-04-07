@@ -12,6 +12,7 @@ ParserItem::~ParserItem()
 ParserTree::ParserTree(const LexerTree& lexerTree, const map<string, double>& variableValues) : variableValues(variableValues)
 {
 	root = createParserValue(lexerTree.getRoot());
+	compile();
 }
 ParserTree::~ParserTree()
 {
@@ -65,11 +66,10 @@ ParserValue* ParserTree::createParserValue(const LexerTreeItem& ltr)
 	}
 }
 
-list<CodePosition> ParserTree::createCodeString()
+void ParserTree::compile()
 {
-	list<CodePosition> res;
-	root->pushToCodeString(res);
-	return res;
+	code.clear();
+	root->pushToCodeString(code);
 }
 
 void ParserItem::pushToCodeString(list<CodePosition>& code)

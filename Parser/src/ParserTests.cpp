@@ -42,13 +42,13 @@ TEST_FUNCTION(parse_simple)
 
 TEST_FUNCTION(code_line)
 {
-	LexerTree* lex = new LexerTree("3 + 4 * 2 / (1 - 5)^2");
-	lex->doLexing();
+	LexerTree lex("3 + 4 * 2 / (1 - 5)^2");
+	lex.doLexing();
 
 	map<string, double> vars;
-	ParserTree par(*lex, vars);
+	ParserTree par(lex, vars);
 
-	list<CodePosition> cp = par.createCodeString();		// should be '3 4 2 * 1 5 - 2 ^ / +'
+	list<CodePosition> cp = par.getCode();		// should be '3 4 2 * 1 5 - 2 ^ / +'
 
 	TEST_ASSERT(cp.size() == 11, "Code string length isn't 11");
 
@@ -91,15 +91,6 @@ TEST_FUNCTION(code_line)
 void TestParser()
 {
 	printf("\nStarting tests for Parser:\n");
-
-	LexerTree* lex = new LexerTree("3 + 4 * 2 / (1 - 5)^2");
-	lex->doLexing();
-
-	map<string, double> vars;
-	ParserTree par(*lex, vars);
-
-	list<CodePosition> cp = par.createCodeString();		// should be '3 4 2 * 1 5 - 2 ^ / +'
-
 
 	TEST_FUNCTION_RUN(parse_simple);
 	TEST_FUNCTION_RUN(code_line);
