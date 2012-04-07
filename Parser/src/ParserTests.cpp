@@ -12,21 +12,21 @@ TEST_FUNCTION(parse_simple)
 	LexerTree lex("2.5 + q * (3 - 5 + moo) ");
 	lex.doLexing();
 
-	ParserTree par(lex);
+	ParserTree<double> par(lex, DoubleConverter());
 
-	const ParserItem& lti = (ParserItem&)par.getRoot();
+	const ParserItem<double>& lti = (ParserItem<double>&)par.getRoot();
 
 	TEST_ASSERT(lti.getInnerItems().size() == 3, "The items number should be 3");
-	list<ParserValue*>::const_iterator it_iter = lti.getInnerItems().begin();
+	list<ParserValue<double>*>::const_iterator it_iter = lti.getInnerItems().begin();
 
-	TEST_ASSERT(typeid(*(*it_iter)) == typeid(ParserConstant), "The first item isn't a ParserConstant");
-	TEST_ASSERT(abs(((ParserConstant*)(*it_iter++))->getValue() - 2.5 < 0.0001), "The first item's value isn't 2.5");
+	TEST_ASSERT(typeid(*(*it_iter)) == typeid(ParserConstant<double>), "The first item isn't a ParserConstant<double>");
+	TEST_ASSERT(abs(((ParserConstant<double>*)(*it_iter++))->getValue() - 2.5 < 0.0001), "The first item's value isn't 2.5");
 
-	TEST_ASSERT(typeid(*(*it_iter)) == typeid(ParserVariable), "The 2nd item isn't a ParserVariable");
-	TEST_ASSERT(((ParserVariable*)(*it_iter++))->getName() == "q" , "The 2nd item's value isn't 'q'");
+	TEST_ASSERT(typeid(*(*it_iter)) == typeid(ParserVariable<double>), "The 2nd item isn't a ParserVariable<double>");
+	TEST_ASSERT(((ParserVariable<double>*)(*it_iter++))->getName() == "q" , "The 2nd item's value isn't 'q'");
 
-	TEST_ASSERT(typeid(*(*it_iter)) == typeid(ParserItem), "The 3rd item isn't a ParserItem");
-	TEST_ASSERT(((ParserItem*)(*it_iter++))->getInnerItems().size() == 3 , "The 2nd item's value isn't 'q'");
+	TEST_ASSERT(typeid(*(*it_iter)) == typeid(ParserItem<double>), "The 3rd item isn't a ParserItem<double>");
+	TEST_ASSERT(((ParserItem<double>*)(*it_iter++))->getInnerItems().size() == 3 , "The 2nd item's value isn't 'q'");
 
 	TEST_ASSERT(lti.getInnerOperations().size() == 2, "The operations number should be 2");
 	list<ParserOperation>::const_iterator op_iter = lti.getInnerOperations().begin();
@@ -41,13 +41,13 @@ TEST_FUNCTION(code_line)
 	LexerTree lex("3 + 4 * 2 / (1 - 5)^2");
 	lex.doLexing();
 
-	ParserTree par(lex);
+	ParserTree<double> par(lex, DoubleConverter());
 
-	list<CodePosition> cp = par.getCode();		// should be '3 4 2 * 1 5 - 2 ^ / +'
+	list<CodePosition<double> > cp = par.getCode();		// should be '3 4 2 * 1 5 - 2 ^ / +'
 
 	TEST_ASSERT(cp.size() == 11, "Code string length isn't 11");
 
-	list<CodePosition>::iterator iter = cp.begin();
+	list<CodePosition<double> >::iterator iter = cp.begin();
 
 	TEST_ASSERT((*iter).getType() == CPT_VALUE, "The first item should be a value");
 	TEST_ASSERT(abs((*iter++).getValue().getValue() - 3) < 0.0001, "The first item value should be 3");
@@ -92,9 +92,9 @@ TEST_FUNCTION(fractal)
 	LexerTree lex("x ^ 2 + x ^ 3 + x ^ 4 + c");
 	lex.doLexing();
 
-	ParserTree par(lex);
-	ParserVariable c_v = par.getVariable("c");
-	ParserVariable x_v = par.getVariable("x");
+	ParserTree<double> par(lex, DoubleConverter());
+	ParserVariable<double> c_v = par.getVariable("c");
+	ParserVariable<double> x_v = par.getVariable("x");
 
 	for (double c = 0; c < 1; c += 1.0 / 400 / 300)
 	{
