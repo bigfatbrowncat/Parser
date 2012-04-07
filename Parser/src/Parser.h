@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <stdlib.h>
+#include <math.h>
 
 #include "Lexer.h"
 
@@ -30,6 +31,12 @@ static const int operationPriority[] =
 	1,	// PO_DIVIDE
 	2	// PO_POWER
 };
+
+
+typedef double (*BinaryOperatorFunction)(double a, double b);
+
+
+
 
 enum CodePositionType
 {
@@ -105,13 +112,17 @@ class ParserVariable : ParserValue
 {
 	friend class ParserTree;
 protected:
-	const map<string, double>& variableValues;
 	string name;
+	double value;
 public:
-	ParserVariable(const map<string, double>& variableValues) : variableValues(variableValues) {}
+	ParserVariable(string name) : name(name) { }
 	virtual double getValue() const
 	{
-		return (variableValues.find(name))->second;
+		return value;
+	}
+	void setValue(double value)
+	{
+		this->value = value;
 	}
 	string getName()
 	{
@@ -144,15 +155,16 @@ private:
 	list<CodePosition> code;
 	ParserValue* root;
 protected:
-	const map<string, double>& variableValues;
+	map<string, ParserVariable*> variables;
 	ParserValue* createParserValue(const LexerTreeItem& ltr);
 	void compile();
 public:
 	double execute();
 	const list<CodePosition>& getCode() const { return code; }
-	ParserTree(const LexerTree& lexerTree, const map<string, double>& variableValues);
+	ParserTree(const LexerTree& lexerTree);
 	~ParserTree();
 	const ParserValue& getRoot() const { return *root; }
+	ParserVariable& getVariable(string name) { return *(variables[name]); }
 };
 
 #endif /* PARSER_H_ */

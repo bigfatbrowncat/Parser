@@ -12,11 +12,7 @@ TEST_FUNCTION(parse_simple)
 	LexerTree lex("2.5 + q * (3 - 5 + moo) ");
 	lex.doLexing();
 
-	map<string, double> vars;
-	vars.insert(pair<string, double>("q", 10.0));
-	vars.insert(pair<string, double>("moo", 3.0));
-
-	ParserTree par(lex, vars);
+	ParserTree par(lex);
 
 	const ParserItem& lti = (ParserItem&)par.getRoot();
 
@@ -45,8 +41,7 @@ TEST_FUNCTION(code_line)
 	LexerTree lex("3 + 4 * 2 / (1 - 5)^2");
 	lex.doLexing();
 
-	map<string, double> vars;
-	ParserTree par(lex, vars);
+	ParserTree par(lex);
 
 	list<CodePosition> cp = par.getCode();		// should be '3 4 2 * 1 5 - 2 ^ / +'
 
@@ -94,22 +89,35 @@ TEST_FUNCTION(fractal)
 {
 	// Something similar the Mandelbrot calculation
 
-	LexerTree lex("x ^ 2 + c");
+	LexerTree lex("x ^ 2 + x ^ 3 + x ^ 4 + c");
 	lex.doLexing();
 
-	map<string, double> vars;
-	vars.insert(pair<string, double>("x", 0));
-	vars.insert(pair<string, double>("c", 0));
+	ParserTree par(lex);
+	ParserVariable c_v = par.getVariable("c");
+	ParserVariable x_v = par.getVariable("x");
 
-	ParserTree par(lex, vars);
-
-	for (double c = 0; c < 1; c += 1.0 / 200 / 150)
+	for (double c = 0; c < 1; c += 1.0 / 400 / 300)
 	{
-		vars["c"] = c;
-		vars["x"] = 0;
+		c_v.setValue(c);
+		x_v.setValue(0);
 		for (int i = 0; i < 10; i++)
 		{
-			vars["x"] = par.execute();
+			x_v.setValue(par.execute());
+		}
+	}
+}
+
+TEST_FUNCTION(fractal_native)
+{
+	// Something similar the Mandelbrot calculation
+	// but using native calculation
+
+	for (double c = 0; c < 1; c += 1.0 / 400 / 300)
+	{
+		double x = 0;
+		for (int i = 0; i < 10; i++)
+		{
+			x = pow(x, 2) + pow(x, 3) + pow(x, 4) + c;
 		}
 	}
 }
@@ -121,4 +129,5 @@ void TestParser()
 	TEST_FUNCTION_RUN(parse_simple);
 	TEST_FUNCTION_RUN(code_line);
 	TEST_FUNCTION_RUN_TIMING(fractal);
+	TEST_FUNCTION_RUN_TIMING(fractal_native);
 }
