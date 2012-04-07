@@ -4,6 +4,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <complex>
 #include <stdlib.h>
 #include <math.h>
 
@@ -49,6 +50,15 @@ class DoubleConverter : public Converter<double>
 public:
 	virtual double fromString(string str) const { return atof(str.c_str()); }
 	virtual ~DoubleConverter() {}
+};
+
+typedef complex<double> d_complex;
+
+class ComplexConverter : public Converter<d_complex>
+{
+public:
+	virtual d_complex fromString(string str) const { return atof(str.c_str()); }
+	virtual ~ComplexConverter() {}
 };
 
 template <typename T> class CodePosition
@@ -137,6 +147,7 @@ public:
 	{
 		return name;
 	}
+	virtual ~ParserVariable() {}
 };
 
 template <typename T> class ParserItem : ParserValue<T>
@@ -150,7 +161,7 @@ public:
 	virtual void pushToCodeString(list<CodePosition<T> >& code);
 	const list<ParserValue<T>*>& getInnerItems() const { return innerItems; }
 	const list<ParserOperation>& getInnerOperations() const { return innerOperations; }
-	virtual double getValue() const
+	virtual T getValue() const
 	{
 		// TODO: implement this
 		return 0;
