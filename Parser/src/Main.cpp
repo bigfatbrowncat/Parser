@@ -14,43 +14,53 @@ class FractalMatrix
 private:
 	int width, height;
 	int* data;
-	bool* contained;
+	bool* off;
 	complex<double>* zLast;
 	int depthMax;
+	double x0, y0, scale;
 public:
 	FractalMatrix(int width, int height) : width(width), height(height)
 	{
 		data = new int[width * height];
-		contained = new bool[width * height];
+		off = new bool[width * height];
 		zLast = new complex<double>[width * height];
-		for (int i = 0; i < width * height; i++)
-		{
-			data[i] = 0; contained[i] = 0; zLast[i] = 0;
-		}
-		depthMax = 0;
 	}
 	int getData(int x, int y) { return data[width * y + x]; }
 	int getDepthMax() { return depthMax; }
 	complex<double> getZLast(int x, int y) { return zLast[width * y + x]; }
-	//void setZLast(int x, int y, complex<double> value) { zLast[width * y + x] = value; }
 
-	void improve(int depth)
+	void start(double x0, double y0, double scale)
 	{
+		this->x0 = x0;
+		this->y0 =  y0;
+		this->scale = scale;
+
+		for (int i = 0; i < width * height; i++)
+		{
+			data[i] = 0; off[i] = 0; zLast[i] = 0;
+		}
+		depthMax = 0;
+	}
+
+	void process(int steps)
+	{
+		int avg_size = (width + height) / 2;
 	    for (int i = 0; i < width; i++)
 	    {
 	        for (int j = 0; j < height; j++)
 	        {
-	        	if (!contained[width * j + i])
+	        	if (!off[width * j + i])
 	        	{
-					complex<double> c((double)(i - width * 2/ 3) / 450, (double)(j - height / 2) / 450);
+					complex<double> c((i - width  / 2) / scale / avg_size + x0,
+					                  (j - height / 2) / scale / avg_size + y0);
 					complex<double> z = zLast[width * j + i];
 					int k = 0;
-					for (; k < depth; k++)
+					for (; k < steps; k++)
 					{
 						z = z * z + c;
 						if (abs(z) > 10)
 						{
-							contained[width * j + i] = true;
+							off[width * j + i] = true;
 							break;
 						}
 					}
@@ -59,14 +69,14 @@ public:
 	        	}
 	        }
 	    }
-	    depthMax += depth;
+	    depthMax += steps;
 	}
 
 	~FractalMatrix()
 	{
 		delete [] data;
 		delete [] zLast;
-		delete [] contained;
+		delete [] off;
 	}
 };
 
@@ -137,6 +147,7 @@ int main(int argc, char* argv[])
     }
 
     FractalMatrix fracMat(width * 2, height * 2);
+    fracMat.start(-0.5, 0, 0.3);
 
     quit_pending = false;
     printf("Starting UI event loop.\n");
@@ -144,7 +155,7 @@ int main(int argc, char* argv[])
     {
         process_events();
 
-        fracMat.improve(3);
+        fracMat.process(3);
 
         for (int i = 0; i < width * 2; i++)
         {
