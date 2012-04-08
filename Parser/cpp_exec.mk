@@ -18,9 +18,9 @@ OBJECT_FILES_WITH_PATH = $(addprefix $(TARGET_OBJ)/,$(addsuffix .o,$(OBJECTS)))
 TARGET_OBJECT_FILES_WITH_PATH = $(addprefix $(TARGET_OBJ)/,$(addsuffix .o,$(TARGET_OBJECTS)))
 TESTER_OBJECT_FILES_WITH_PATH = $(addprefix $(TARGET_OBJ)/,$(addsuffix .o,$(TESTER_OBJECTS)))
 
-HEADERS_WITH_PATH = $(addprefix $(INCLUDE)/,$(shell cd $(INCLUDE); find . -name \*.h))
+SOURCE_HEADERS_WITH_PATH = $(addprefix $(SOURCE)/,$(shell cd $(SOURCE); find . -name \*.h))
 
-all: executable tester tests
+all: executable tester tests external_bin
 
 clean:
 	@echo "[$(PROJ)] Removing target executable..."
@@ -47,23 +47,23 @@ ENSURE_OBJ = if [ ! -d "$(TARGET_OBJ)" ]; then mkdir -p "$(TARGET_OBJ)"; fi
 
 ################### Objects ###################
 
-$(OBJECT_FILES_WITH_PATH) : $(TARGET_OBJ)/%.o : $(SOURCE)/%.cpp $(HEADERS_WITH_PATH) 
+$(OBJECT_FILES_WITH_PATH) : $(TARGET_OBJ)/%.o : $(SOURCE)/%.cpp $(HEADERS_WITH_PATH) $(SOURCE_HEADERS_WITH_PATH)
 	@echo "[$(PROJ)] Compiling $@ ..."
 	$(ENSURE_OBJ)
 	if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
-	$(CPP) -c $< -o $@ -I$(INCLUDE)
+	$(CPP) -c $< -o $@ $(INCLUDE)
 
-$(TARGET_OBJECT_FILES_WITH_PATH) : $(TARGET_OBJ)/%.o : $(SOURCE)/%.cpp $(HEADERS_WITH_PATH) 
+$(TARGET_OBJECT_FILES_WITH_PATH) : $(TARGET_OBJ)/%.o : $(SOURCE)/%.cpp $(HEADERS_WITH_PATH) $(SOURCE_HEADERS_WITH_PATH)
 	@echo "[$(PROJ)] Compiling $@ ..."
 	$(ENSURE_OBJ)
 	if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
-	$(CPP) -c $< -o $@ -I$(INCLUDE)
+	$(CPP) -c $< -o $@ $(INCLUDE)
 
-$(TESTER_OBJECT_FILES_WITH_PATH) : $(TARGET_OBJ)/%.o : $(SOURCE)/%.cpp $(HEADERS_WITH_PATH) 
+$(TESTER_OBJECT_FILES_WITH_PATH) : $(TARGET_OBJ)/%.o : $(SOURCE)/%.cpp $(HEADERS_WITH_PATH) $(SOURCE_HEADERS_WITH_PATH)
 	@echo "[$(PROJ)] Compiling $@ ..."
 	$(ENSURE_OBJ)
 	if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
-	$(CPP) -c $< -o $@ -I$(INCLUDE)
+	$(CPP) -c $< -o $@ $(INCLUDE)
 
 ################### Targets ###################
 
@@ -82,5 +82,9 @@ $(TARGET_BIN)/$(TESTER): $(OBJECT_FILES_WITH_PATH) $(TESTER_OBJECT_FILES_WITH_PA
 tests: tester
 	$(TARGET_BIN)/$(TESTER)
 
-.PHONY: all executable tester tests clean
+external_bin:
+	@echo "[$(PROJ)] Copying external binaries to target folder ..."
+	cp -f $(EXTERNAL_BIN)/* $(TARGET_BIN)/
+
+.PHONY: all executable external_bin tester tests clean
 .SILENT:

@@ -3,8 +3,9 @@
 PROJ = Simplex
 
 OBJECTS = Lexer Parser
-INCLUDE = src
+INCLUDE = -ISDL-1.2.14/include/SDL
 
+EXTERNAL_BIN = SDL-1.2.14/bin
 TARGETNAME = Simplex
 TARGET_OBJECTS = Main
 
@@ -22,8 +23,7 @@ CPPFLAGS =
 CPPDEFINES =
 
 # Universal macros
-LIBS = 
-CUSTOM_INCLUDES = 
+LIBS = -LSDL-1.2.14/lib -lmingw32 -lSDLmain -lSDL -lpthread.dll
 SOURCE = src
 TARGET = .
 

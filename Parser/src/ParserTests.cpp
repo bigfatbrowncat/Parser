@@ -31,7 +31,7 @@ TEST_FUNCTION(parse_simple)
 
 	ParserTree<d_complex> par(lex, ComplexConverter());
 
-	const ParserItem<d_complex>& lti = (ParserItem<d_complex>&)par.getRoot();
+	const ParserBranch<d_complex>& lti = (ParserBranch<d_complex>&)par.getRoot();
 
 	TEST_ASSERT(lti.getInnerItems().size() == 3, "The items number should be 3");
 	list<ParserValue<d_complex>*>::const_iterator it_iter = lti.getInnerItems().begin();
@@ -42,8 +42,8 @@ TEST_FUNCTION(parse_simple)
 	TEST_ASSERT(typeid(*(*it_iter)) == typeid(ParserVariable<d_complex>), "The 2nd item isn't a ParserVariable<d_complex>");
 	TEST_ASSERT(((ParserVariable<d_complex>*)(*it_iter++))->getName() == "q" , "The 2nd item's value isn't 'q'");
 
-	TEST_ASSERT(typeid(*(*it_iter)) == typeid(ParserItem<d_complex>), "The 3rd item isn't a ParserItem<d_complex>");
-	TEST_ASSERT(((ParserItem<d_complex>*)(*it_iter++))->getInnerItems().size() == 3 , "The 2nd item's value isn't 'q'");
+	TEST_ASSERT(typeid(*(*it_iter)) == typeid(ParserBranch<d_complex>), "The 3rd item isn't a ParserItem<d_complex>");
+	TEST_ASSERT(((ParserBranch<d_complex>*)(*it_iter++))->getInnerItems().size() == 3 , "The 2nd item's value isn't 'q'");
 
 	TEST_ASSERT(lti.getInnerOperations().size() == 2, "The operations number should be 2");
 	list<ParserOperation>::const_iterator op_iter = lti.getInnerOperations().begin();

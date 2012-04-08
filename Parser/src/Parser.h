@@ -57,8 +57,6 @@ private:
 		ParserValue<T>* value;
 	} content;
 public:
-
-
 	CodeItem() {}
 	CodeItem::Type getType() const
 	{
@@ -115,18 +113,14 @@ public:
 	virtual ~ParserConstant() {}
 };
 
-template <typename T> class ParserVariable : ParserValue<T>
+template <typename T> class ParserVariable : ParserConstant<T>
 {
 	friend class ParserTree<T>;
-protected:
+private:
 	string name;
-	T value;
-public:
+protected:
 	ParserVariable(string name) : name(name) { }
-	virtual T getValue() const
-	{
-		return value;
-	}
+public:
 	void setValue(T value)
 	{
 		this->value = value;
@@ -138,13 +132,13 @@ public:
 	virtual ~ParserVariable() {}
 };
 
-template <typename T> class ParserItem : ParserValue<T>
+template <typename T> class ParserBranch : ParserValue<T>
 {
 	friend class ParserTree<T>;
 protected:
 	list<ParserValue<T>*> innerItems;
 	list<ParserOperation> innerOperations;
-	ParserItem() {}
+	ParserBranch() {}
 public:
 	virtual void pushToCodeString(list<CodeItem<T> >& code);
 	const list<ParserValue<T>*>& getInnerItems() const { return innerItems; }
@@ -154,7 +148,7 @@ public:
 		// TODO: implement this
 		return 0;
 	}
-	virtual ~ParserItem();
+	virtual ~ParserBranch();
 };
 
 template <typename T> class ParserTree
@@ -176,7 +170,7 @@ public:
 	ParserVariable<T>& getVariable(string name) { return *(variables[name]); }
 };
 
-template <typename T> ParserItem<T>::~ParserItem()
+template <typename T> ParserBranch<T>::~ParserBranch()
 {
     for (typename list<ParserValue<T>*>::iterator iter = innerItems.begin(); iter != innerItems.end(); iter++)
             delete (*iter);
@@ -206,7 +200,7 @@ template <typename T> ParserValue<T>* ParserTree<T>::createParserValue(const Lex
 		else
 		{
 			ParserVariable<T>* res = new ParserVariable<T>(ltr.getInnerText());
-			variables.insert(pair<string, ParserVariable<T>*>(res->name, res));
+			variables.insert(pair<string, ParserVariable<T>*>(ltr.getInnerText(), res));
 			return res;
 		}
 	}
@@ -216,7 +210,7 @@ template <typename T> ParserValue<T>* ParserTree<T>::createParserValue(const Lex
 	}
 	else
 	{
-		ParserItem<T>* res = new ParserItem<T>;
+		ParserBranch<T>* res = new ParserBranch<T>;
 		for (list<LexerTreeItem>::const_iterator iter = lexerItems.begin(); iter != lexerItems.end(); iter++)
 		{
 			// TODO Check the right order! For example, now it's correct to write "3 4 5 + -" and it would mean "3 + 4 - 5"
@@ -294,7 +288,7 @@ template <typename T> T ParserTree<T>::execute()
 	return valueStack[stackTop];
 }
 
-template <typename T> void ParserItem<T>::pushToCodeString(list<CodeItem<T> >& code)
+template <typename T> void ParserBranch<T>::pushToCodeString(list<CodeItem<T> >& code)
 {
 	list<ParserOperation> opstack;
 
