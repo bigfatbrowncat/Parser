@@ -14,7 +14,7 @@ TESTER_OBJECTS = LexerTests ParserTests TesterMain
 
 # CC macros
 COMMON_CFLAGS = -static-libgcc
-CFLAGS = -O0 -g
+CFLAGS = -O0 -g -mwindows
 CDEFINES =
 
 # CPP macros (additional to C macros)

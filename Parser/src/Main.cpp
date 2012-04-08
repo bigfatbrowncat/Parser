@@ -1,9 +1,30 @@
 #include <SDL.h>
 #include <stdio.h>
+#include <assert.h>
+
+#include <complex>
 
 using namespace std;
 
+int width = 640;
+int height = 480;
+
 bool quit_pending = false;
+
+void addpixel24(SDL_Surface *surface, int x, int y, Uint8 r, Uint8 g, Uint8 b, float a)
+{
+	assert(surface->format->BytesPerPixel == 3);
+	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * 3;
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	p[0] = (int)(p[0] * (1 - a) + r * a);
+	p[1] = (int)(p[1] * (1 - a) + g * a);
+	p[2] = (int)(p[2] * (1 - a) + b * a);
+#else
+	p[2] = (int)(p[2] * (1 - a) + r * a);
+	p[1] = (int)(p[1] * (1 - a) + g * a);
+	p[0] = (int)(p[0] * (1 - a) + b * a);
+#endif
+}
 
 void process_events()
 {
@@ -46,13 +67,31 @@ int main(int argc, char* argv[])
     printf("Starting UI event loop.\n");
 
     SDL_Surface* screen;
-    screen = SDL_SetVideoMode(640, 480, 32,SDL_HWSURFACE|SDL_DOUBLEBUF);
+    screen = SDL_SetVideoMode(width, height, 24, SDL_HWSURFACE | SDL_DOUBLEBUF);
 
     if(screen == NULL)
     {
     	printf("Could not set video mode: %d", SDL_GetError());
     	return 1;
     }
+
+    for (int i = 0; i < width; i++)
+    {
+        for (int j = 0; j < height; j++)
+        {
+        	complex<double> c((double)(i - 320) / 150, (double)(j - 240) / 150);
+        	complex<double> z(0, 0);
+        	int k = 0;
+        	for (; k < 30; k++)
+        	{
+        		z = z * z + c;
+        		if (abs(z) > 10) break;
+        	}
+        	addpixel24(screen, i, j, 255 * k / 30, 255 * k / 30, 255 * k / 30, 1);
+        }
+    }
+
+    SDL_UpdateRect(screen, 0, 0, 0, 0);
 
     quit_pending = false;
     printf("Starting UI event loop.\n");
