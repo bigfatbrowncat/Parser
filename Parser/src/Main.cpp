@@ -6,8 +6,69 @@
 
 using namespace std;
 
-int width = 640;
-int height = 480;
+int width = 800;
+int height = 600;
+
+class FractalMatrix
+{
+private:
+	int width, height;
+	int* data;
+	bool* contained;
+	complex<double>* zLast;
+	int depthMax;
+public:
+	FractalMatrix(int width, int height) : width(width), height(height)
+	{
+		data = new int[width * height];
+		contained = new bool[width * height];
+		zLast = new complex<double>[width * height];
+		for (int i = 0; i < width * height; i++)
+		{
+			data[i] = 0; contained[i] = 0; zLast[i] = 0;
+		}
+		depthMax = 0;
+	}
+	int getData(int x, int y) { return data[width * y + x]; }
+	int getDepthMax() { return depthMax; }
+	complex<double> getZLast(int x, int y) { return zLast[width * y + x]; }
+	//void setZLast(int x, int y, complex<double> value) { zLast[width * y + x] = value; }
+
+	void improve(int depth)
+	{
+	    for (int i = 0; i < width; i++)
+	    {
+	        for (int j = 0; j < height; j++)
+	        {
+	        	if (!contained[width * j + i])
+	        	{
+					complex<double> c((double)(i - width * 2/ 3) / 450, (double)(j - height / 2) / 450);
+					complex<double> z = zLast[width * j + i];
+					int k = 0;
+					for (; k < depth; k++)
+					{
+						z = z * z + c;
+						if (abs(z) > 10)
+						{
+							contained[width * j + i] = true;
+							break;
+						}
+					}
+					zLast[width * j + i] = z;
+					data[width * j + i] += k;
+	        	}
+	        }
+	    }
+	    depthMax += depth;
+	}
+
+	~FractalMatrix()
+	{
+		delete [] data;
+		delete [] zLast;
+		delete [] contained;
+	}
+};
 
 bool quit_pending = false;
 
@@ -57,7 +118,7 @@ int main(int argc, char* argv[])
 {
     printf("Starting UI event loop.\n");
     fflush(stdout);
-    if( SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO) < 0)
+    if( SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
     {
     	printf("Could not initialize SDL: %d", SDL_GetError());
     	return 1;
@@ -75,28 +136,27 @@ int main(int argc, char* argv[])
     	return 1;
     }
 
-    for (int i = 0; i < width; i++)
-    {
-        for (int j = 0; j < height; j++)
-        {
-        	complex<double> c((double)(i - 320) / 150, (double)(j - 240) / 150);
-        	complex<double> z(0, 0);
-        	int k = 0;
-        	for (; k < 30; k++)
-        	{
-        		z = z * z + c;
-        		if (abs(z) > 10) break;
-        	}
-        	addpixel24(screen, i, j, 255 * k / 30, 255 * k / 30, 255 * k / 30, 1);
-        }
-    }
-
-    SDL_UpdateRect(screen, 0, 0, 0, 0);
+    FractalMatrix fracMat(width * 2, height * 2);
 
     quit_pending = false;
     printf("Starting UI event loop.\n");
-    while( !quit_pending ) {
-        /* Process incoming events. */
-        process_events( );
+    while( !quit_pending )
+    {
+        process_events();
+
+        fracMat.improve(3);
+
+        for (int i = 0; i < width * 2; i++)
+        {
+            for (int j = 0; j < height * 2; j++)
+            {
+            	int depth = fracMat.getData(i, j);
+            	int depthMax = fracMat.getDepthMax();
+            	int v = 255 * (1.0 - 1.0 / pow(1.05, depth));
+      			addpixel24(screen, i / 2, j / 2, v, v, v, 0.25);
+            }
+        }
+        SDL_Delay(10);
+        SDL_UpdateRect(screen, 0, 0, 0, 0);
     }
 }
