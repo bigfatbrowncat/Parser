@@ -33,46 +33,34 @@ static const int operationPriority[] =
 	2	// PO_POWER
 };
 
-enum CodePositionType
-{
-	CPT_VALUE, CPT_OPERATION
-};
 
-template<typename T> class Converter
+template<typename T> class ConstantParser
 {
 public:
-	virtual T fromString(string str) const = 0;
-	virtual ~Converter() {}
+	virtual T parse(string str) const = 0;
+	virtual ~ConstantParser() {}
 };
 
-class DoubleConverter : public Converter<double>
+template <typename T> class CodeItem
 {
 public:
-	virtual double fromString(string str) const { return atof(str.c_str()); }
-	virtual ~DoubleConverter() {}
-};
+	enum Type
+	{
+		VALUE, OPERATION
+	};
 
-typedef complex<double> d_complex;
-
-class ComplexConverter : public Converter<d_complex>
-{
-public:
-	virtual d_complex fromString(string str) const { return atof(str.c_str()); }
-	virtual ~ComplexConverter() {}
-};
-
-template <typename T> class CodePosition
-{
 private:
-	CodePositionType type;
+	Type type;
 	union
 	{
 		ParserOperation operation;
 		ParserValue<T>* value;
 	} content;
 public:
-	CodePosition() {}
-	CodePositionType getType() const
+
+
+	CodeItem() {}
+	CodeItem::Type getType() const
 	{
 		return type;
 	}
@@ -85,17 +73,17 @@ public:
 	{
 		return *content.value;
 	}
-	static CodePosition withOperation(ParserOperation operation)
+	static CodeItem withOperation(ParserOperation operation)
 	{
-		CodePosition cp;
-		cp.type = CPT_OPERATION;
+		CodeItem cp;
+		cp.type = CodeItem::OPERATION;
 		cp.content.operation = operation;
 		return cp;
 	}
-	static CodePosition<T> withValue(ParserValue<T>& value)
+	static CodeItem<T> withValue(ParserValue<T>& value)
 	{
-		CodePosition cp;
-		cp.type = CPT_VALUE;
+		CodeItem cp;
+		cp.type = CodeItem::VALUE;
 		cp.content.value = &value;
 		return cp;
 	}
@@ -105,9 +93,9 @@ template <typename T> class ParserValue
 {
 protected:
 public:
-	virtual void pushToCodeString(list<CodePosition<T> >& code)
+	virtual void pushToCodeString(list<CodeItem<T> >& code)
 	{
-		code.push_back(CodePosition<T>::withValue(*this));
+		code.push_back(CodeItem<T>::withValue(*this));
 	}
 	virtual T getValue() const = 0;
 	virtual ~ParserValue() {}
@@ -158,7 +146,7 @@ protected:
 	list<ParserOperation> innerOperations;
 	ParserItem() {}
 public:
-	virtual void pushToCodeString(list<CodePosition<T> >& code);
+	virtual void pushToCodeString(list<CodeItem<T> >& code);
 	const list<ParserValue<T>*>& getInnerItems() const { return innerItems; }
 	const list<ParserOperation>& getInnerOperations() const { return innerOperations; }
 	virtual T getValue() const
@@ -172,8 +160,8 @@ public:
 template <typename T> class ParserTree
 {
 private:
-	const Converter<T>& converter;
-	list<CodePosition<T> > code;
+	const ConstantParser<T>& constantParser;
+	list<CodeItem<T> > code;
 	ParserValue<T>* root;
 protected:
 	map<string, ParserVariable<T>*> variables;
@@ -181,8 +169,8 @@ protected:
 	void compile();
 public:
 	T execute();
-	const list<CodePosition<T> >& getCode() const { return code; }
-	ParserTree(const LexerTree& lexerTree, const Converter<T>& converter);
+	const list<CodeItem<T> >& getCode() const { return code; }
+	ParserTree(const LexerTree& lexerTree, const ConstantParser<T>& constantParser);
 	~ParserTree();
 	const ParserValue<T>& getRoot() const { return *root; }
 	ParserVariable<T>& getVariable(string name) { return *(variables[name]); }
@@ -194,7 +182,7 @@ template <typename T> ParserItem<T>::~ParserItem()
             delete (*iter);
 }
 
-template <typename T> ParserTree<T>::ParserTree(const LexerTree& lexerTree, const Converter<T>& converter) : converter(converter)
+template <typename T> ParserTree<T>::ParserTree(const LexerTree& lexerTree, const ConstantParser<T>& constantParser) : constantParser(constantParser)
 {
 	root = createParserValue(lexerTree.getRoot());
 	compile();
@@ -212,7 +200,7 @@ template <typename T> ParserValue<T>* ParserTree<T>::createParserValue(const Lex
 		if (ltr.getInnerText()[0] >= '0' && ltr.getInnerText()[0] <= '9')
 		{
 			ParserConstant<T>* res = new ParserConstant<T>;
-			res->value = converter.fromString(ltr.getInnerText());
+			res->value = constantParser.parse(ltr.getInnerText());
 			return res;
 		}
 		else
@@ -261,14 +249,14 @@ template <typename T> T ParserTree<T>::execute()
 {
 	T valueStack[256];
 	int stackTop = 0;
-	for (typename list<CodePosition<T> >::const_iterator iter = code.begin(); iter != code.end(); iter++)
+	for (typename list<CodeItem<T> >::const_iterator iter = code.begin(); iter != code.end(); iter++)
 	{
-		if ((*iter).getType() == CPT_VALUE)
+		if ((*iter).getType() == CodeItem<T>::VALUE)
 		{
 			valueStack[stackTop] = (*iter).getValue().getValue();
 			stackTop ++;
 		}
-		else if ((*iter).getType() == CPT_OPERATION)
+		else if ((*iter).getType() == CodeItem<T>::OPERATION)
 		{
 			T b = valueStack[stackTop - 1];
 			T a = valueStack[stackTop - 2];
@@ -306,7 +294,7 @@ template <typename T> T ParserTree<T>::execute()
 	return valueStack[stackTop];
 }
 
-template <typename T> void ParserItem<T>::pushToCodeString(list<CodePosition<T> >& code)
+template <typename T> void ParserItem<T>::pushToCodeString(list<CodeItem<T> >& code)
 {
 	list<ParserOperation> opstack;
 
@@ -321,7 +309,7 @@ template <typename T> void ParserItem<T>::pushToCodeString(list<CodePosition<T> 
 		// Poping the operators from stack if they have higher priority
 		while (opstack.size() > 0 && operationPriority[*op_iter] <= operationPriority[opstack.back()])
 		{
-			code.push_back(CodePosition<T>::withOperation(opstack.back()));
+			code.push_back(CodeItem<T>::withOperation(opstack.back()));
 			opstack.pop_back();
 		}
 
@@ -337,7 +325,7 @@ template <typename T> void ParserItem<T>::pushToCodeString(list<CodePosition<T> 
 	// Poping the remaining operators from stack
 	while (opstack.size() > 0)
 	{
-		code.push_back(CodePosition<T>::withOperation(opstack.back()));
+		code.push_back(CodeItem<T>::withOperation(opstack.back()));
 		opstack.pop_back();
 	}
 }

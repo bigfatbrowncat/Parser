@@ -7,6 +7,23 @@
 
 #include "tester_tools.h"
 
+class DoubleConverter : public ConstantParser<double>
+{
+public:
+	virtual double parse(string str) const { return atof(str.c_str()); }
+	virtual ~DoubleConverter() {}
+};
+
+typedef complex<double> d_complex;
+
+class ComplexConverter : public ConstantParser<d_complex>
+{
+public:
+	virtual d_complex parse(string str) const { return atof(str.c_str()); }
+	virtual ~ComplexConverter() {}
+};
+
+
 TEST_FUNCTION(parse_simple)
 {
 	LexerTree lex("2.5 + q * (3 - 5 + moo) ");
@@ -43,43 +60,43 @@ TEST_FUNCTION(code_line)
 
 	ParserTree<d_complex> par(lex, ComplexConverter());
 
-	list<CodePosition<d_complex> > cp = par.getCode();		// should be '3 4 2 * 1 5 - 2 ^ / +'
+	list<CodeItem<d_complex> > cp = par.getCode();		// should be '3 4 2 * 1 5 - 2 ^ / +'
 
 	TEST_ASSERT(cp.size() == 11, "Code string length isn't 11");
 
-	list<CodePosition<d_complex> >::iterator iter = cp.begin();
+	list<CodeItem<d_complex> >::iterator iter = cp.begin();
 
-	TEST_ASSERT((*iter).getType() == CPT_VALUE, "The first item should be a value");
+	TEST_ASSERT((*iter).getType() == CodeItem<d_complex>::VALUE, "The first item should be a value");
 	TEST_ASSERT(abs((*iter++).getValue().getValue().real() - 3) < 0.0001, "The first item value should be 3");
 
-	TEST_ASSERT((*iter).getType() == CPT_VALUE, "The 2nd item should be a value");
+	TEST_ASSERT((*iter).getType() == CodeItem<d_complex>::VALUE, "The 2nd item should be a value");
 	TEST_ASSERT(abs((*iter++).getValue().getValue().real() - 4) < 0.0001, "The 2nd item value should be 4");
 
-	TEST_ASSERT((*iter).getType() == CPT_VALUE, "The 3rd item should be a value");
+	TEST_ASSERT((*iter).getType() == CodeItem<d_complex>::VALUE, "The 3rd item should be a value");
 	TEST_ASSERT(abs((*iter++).getValue().getValue().real() - 2) < 0.0001, "The 3rd item value should be 2");
 
-	TEST_ASSERT((*iter).getType() == CPT_OPERATION, "The 4th item should be an operator");
+	TEST_ASSERT((*iter).getType() == CodeItem<d_complex>::OPERATION, "The 4th item should be an operator");
 	TEST_ASSERT((*iter++).getOperation() == PO_MULTIPLY, "The 4th item value should be '*'");
 
-	TEST_ASSERT((*iter).getType() == CPT_VALUE, "The 5th item should be a value");
+	TEST_ASSERT((*iter).getType() == CodeItem<d_complex>::VALUE, "The 5th item should be a value");
 	TEST_ASSERT(abs((*iter++).getValue().getValue().real() - 1) < 0.0001, "The 5th item value should be 1");
 
-	TEST_ASSERT((*iter).getType() == CPT_VALUE, "The 6th item should be a value");
+	TEST_ASSERT((*iter).getType() == CodeItem<d_complex>::VALUE, "The 6th item should be a value");
 	TEST_ASSERT(abs((*iter++).getValue().getValue().real() - 5) < 0.0001, "The 6th item value should be 5");
 
-	TEST_ASSERT((*iter).getType() == CPT_OPERATION, "The 7th item should be an operator");
+	TEST_ASSERT((*iter).getType() == CodeItem<d_complex>::OPERATION, "The 7th item should be an operator");
 	TEST_ASSERT((*iter++).getOperation() == PO_SUBTRACT, "The 7th item value should be '*'");
 
-	TEST_ASSERT((*iter).getType() == CPT_VALUE, "The 8th item should be a value");
+	TEST_ASSERT((*iter).getType() == CodeItem<d_complex>::VALUE, "The 8th item should be a value");
 	TEST_ASSERT(abs((*iter++).getValue().getValue().real() - 2) < 0.0001, "The 8th item value should be 2");
 
-	TEST_ASSERT((*iter).getType() == CPT_OPERATION, "The 9th item should be an operator");
+	TEST_ASSERT((*iter).getType() == CodeItem<d_complex>::OPERATION, "The 9th item should be an operator");
 	TEST_ASSERT((*iter++).getOperation() == PO_POWER, "The 9th item value should be '^'");
 
-	TEST_ASSERT((*iter).getType() == CPT_OPERATION, "The 10th item should be an operator");
+	TEST_ASSERT((*iter).getType() == CodeItem<d_complex>::OPERATION, "The 10th item should be an operator");
 	TEST_ASSERT((*iter++).getOperation() == PO_DIVIDE, "The 10th item value should be '/'");
 
-	TEST_ASSERT((*iter).getType() == CPT_OPERATION, "The 11th item should be an operator");
+	TEST_ASSERT((*iter).getType() == CodeItem<d_complex>::OPERATION, "The 11th item should be an operator");
 	TEST_ASSERT((*iter++).getOperation() == PO_ADD, "The 11th item value should be '+'");
 
 	d_complex value = par.execute();
