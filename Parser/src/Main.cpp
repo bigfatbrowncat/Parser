@@ -108,7 +108,7 @@ public:
 
 bool quit_pending = false;
 
-void addpixel24(SDL_Surface *surface, int x, int y, Uint8 r, Uint8 g, Uint8 b, float a)
+void avgpixel24(SDL_Surface *surface, int x, int y, Uint8 r, Uint8 g, Uint8 b, float a)
 {
 	assert(surface->format->BytesPerPixel == 3);
 	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * 3;
@@ -120,6 +120,21 @@ void addpixel24(SDL_Surface *surface, int x, int y, Uint8 r, Uint8 g, Uint8 b, f
 	p[2] = (int)(p[2] * (1 - a) + r * a);
 	p[1] = (int)(p[1] * (1 - a) + g * a);
 	p[0] = (int)(p[0] * (1 - a) + b * a);
+#endif
+}
+
+void addpixel24(SDL_Surface *surface, int x, int y, Uint8 r, Uint8 g, Uint8 b, float a)
+{
+	assert(surface->format->BytesPerPixel == 3);
+	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * 3;
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	p[0] += (int)(r * a);
+	p[1] += (int)(g * a);
+	p[2] += (int)(b * a);
+#else
+	p[2] += (int)(r * a);
+	p[1] += (int)(g * a);
+	p[0] += (int)(b * a);
 #endif
 }
 
@@ -211,7 +226,7 @@ int main(int argc, char* argv[])
 
     ParserTree<d_complex> parser(lex, ComplexParser());
 
-    FractalMatrix fracMat(width * 2, height * 2);
+    FractalMatrix fracMat(width, height);
     fracMat.start(parser, -0.5, 0, 0.3, 2);
 
     quit_pending = false;
@@ -230,20 +245,25 @@ int main(int argc, char* argv[])
         sprintf(ttl, "Equation: %s, Steps: %d", eq.c_str(), fracMat.getDepthMax());
 
         SDL_WM_SetCaption("Mandelbrot - Simplex", "Mandelbrot - Simplex");
+        SDL_Rect rct;
+        rct.x = 0; rct.y = 0; rct.w = width; rct.h = height;
+        SDL_FillRect(screen, &rct, 0x000000);
 
-        for (int i = 0; i < width * 2; i++)
+        for (int i = 0; i < width; i++)
         {
-            for (int j = 0; j < height * 2; j++)
+            for (int j = 0; j < height; j++)
             {
             	int depth = fracMat.getData(i, j);
             	int depthMax = fracMat.getDepthMax();
             	int v = 255 * (1.0 - 1.0 / pow(1.05, depth));
             	if (depth == depthMax) v = 255;
-      			addpixel24(screen, i / 2, j / 2, v, v, v, 0.25);
+      			addpixel24(screen, i, j, v, v, v, 1);
             }
         }
-        put_string(screen, "Mandelbrot", 20, 20, font, symbol_w, symbol_h, 2, encoding, 255, 255, 255, 1);
-        put_string(screen, ttl, 40, 40 + 2 * symbol_h + 6, font, symbol_w, symbol_h, 2, encoding, 255, 255, 255, 2);
+        //put_string(screen, "Mandelbrot", 20, 20, font, symbol_w, symbol_h, 2, encoding, 255, 255, 255, 1);
+        //put_string(screen, ttl, 40, 40 + 2 * symbol_h + 6, font, symbol_w, symbol_h, 2, encoding, 255, 255, 255, 2);
+        put_string(screen, "Mandelbrot set", 30, 30, font, symbol_w, symbol_h, 2, encoding, 255, 255, 255, 2);
+
 
         SDL_Delay(10);
         SDL_UpdateRect(screen, 0, 0, 0, 0);
