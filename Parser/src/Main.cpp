@@ -21,7 +21,7 @@ private:
 	bool* out;
 	d_complex* zLast;
 	int depthMax;
-	double x0, y0, scale, bailOut;
+	double x0, y0, scale, bailOutRadius;
 
 	ParserTree<d_complex>* parser;
 public:
@@ -35,27 +35,25 @@ public:
 	int getDepthMax() { return depthMax; }
 	d_complex getZLast(int x, int y) { return zLast[width * y + x]; }
 
-	void start(double x0, double y0, double scale, double bailOut)
+	void start(ParserTree<d_complex>& parser, double x0, double y0, double scale, double bailOutRadius)
 	{
 		this->x0 = x0;
-		this->y0 =  y0;
+		this->y0 = y0;
 		this->scale = scale;
-		this->bailOut = bailOut;
+		this->bailOutRadius = bailOutRadius;
+		this->parser = &parser;
 
 		for (int i = 0; i < width * height; i++)
 		{
 			data[i] = 0; out[i] = 0; zLast[i] = 0;
 		}
 		depthMax = 0;
-
-	    LexerTree lex("z^2+c");
-	    lex.doLexing();
-
-	    parser = new ParserTree<d_complex>(lex, ComplexParser());
 	}
 
-	void process(int steps)
+	// Returns the new bail-outs. Can be used to determine how "successful" it is
+	int process(int steps)
 	{
+		int newBailOuts = 0;
 	    ParserVariable<d_complex>& z_var = parser->getVariable("z");
 	    ParserVariable<d_complex>& c_var = parser->getVariable("c");
 		int avg_size = (width + height) / 2;
@@ -69,9 +67,10 @@ public:
 					d_complex c((i - width  / 2) / scale / avg_size + x0,
 					            (j - height / 2) / scale / avg_size + y0);
 
-					if (abs(c) > bailOut)
+					if (abs(c) > bailOutRadius)
 					{
 						out[width * j + i] = true;
+						newBailOuts++;
 					}
 					else
 					{
@@ -81,9 +80,10 @@ public:
 						for (; k < steps; k++)
 						{
 							z_var.setValue(parser->execute());
-							if (abs(z_var.getValue()) > bailOut)
+							if (abs(z_var.getValue()) > bailOutRadius)
 							{
 								out[width * j + i] = true;
+								newBailOuts++;
 								break;
 							}
 						}
@@ -94,6 +94,7 @@ public:
 	        }
 	    }
 	    depthMax += steps;
+	    return newBailOuts;
 	}
 
 	~FractalMatrix()
@@ -172,20 +173,30 @@ int main(int argc, char* argv[])
     	return 1;
     }
 
+    LexerTree lex("z^2+c");
+    lex.doLexing();
+
+    ParserTree<d_complex> parser(lex, ComplexParser());
+
     FractalMatrix fracMat(width * 2, height * 2);
-    fracMat.start(-0.5, 0, 0.3, 2);
+    fracMat.start(parser, -0.5, 0, 0.3, 2);
 
     quit_pending = false;
     printf("Starting UI event loop.\n");
+    bool success = false;
     while( !quit_pending )
     {
         process_events();
 
-        fracMat.process(3);
-        char ttl[128];
-        sprintf(ttl, "Mandelbrot: %d", fracMat.getDepthMax());
+        if (!success)
+        {
+        	success = (fracMat.process(1) < 50);
+        }
 
-        SDL_WM_SetCaption(ttl, ttl);
+        char ttl[128];
+        sprintf(ttl, "Mandelbrot (steps: %d)", fracMat.getDepthMax());
+
+        SDL_WM_SetCaption(ttl, "Mandelbrot");
 
         for (int i = 0; i < width * 2; i++)
         {
@@ -194,6 +205,7 @@ int main(int argc, char* argv[])
             	int depth = fracMat.getData(i, j);
             	int depthMax = fracMat.getDepthMax();
             	int v = 255 * (1.0 - 1.0 / pow(1.05, depth));
+            	if (depth == depthMax) v = 255;
       			addpixel24(screen, i / 2, j / 2, v, v, v, 0.25);
             }
         }
