@@ -4,23 +4,15 @@
 #include <typeinfo>
 
 #include "Parser.h"
+#include "ComplexParser.h"
 
 #include "tester_tools.h"
 
-class DoubleConverter : public ConstantParser<double>
+class DoubleParser : public ConstantParser<double>
 {
 public:
 	virtual double parse(string str) const { return atof(str.c_str()); }
-	virtual ~DoubleConverter() {}
-};
-
-typedef complex<double> d_complex;
-
-class ComplexConverter : public ConstantParser<d_complex>
-{
-public:
-	virtual d_complex parse(string str) const { return atof(str.c_str()); }
-	virtual ~ComplexConverter() {}
+	virtual ~DoubleParser() {}
 };
 
 
@@ -29,7 +21,7 @@ TEST_FUNCTION(parse_simple)
 	LexerTree lex("2.5 + q * (3 - 5 + moo) ");
 	lex.doLexing();
 
-	ParserTree<d_complex> par(lex, ComplexConverter());
+	ParserTree<d_complex> par(lex, ComplexParser());
 
 	const ParserBranch<d_complex>& lti = (ParserBranch<d_complex>&)par.getRoot();
 
@@ -58,7 +50,7 @@ TEST_FUNCTION(code_line)
 	LexerTree lex("3 + 4 * 2 / (1 - 5)^2");
 	lex.doLexing();
 
-	ParserTree<d_complex> par(lex, ComplexConverter());
+	ParserTree<d_complex> par(lex, ComplexParser());
 
 	list<CodeItem<d_complex> > cp = par.getCode();		// should be '3 4 2 * 1 5 - 2 ^ / +'
 
@@ -102,6 +94,21 @@ TEST_FUNCTION(code_line)
 	d_complex value = par.execute();
 }
 
+TEST_FUNCTION(var)
+{
+	// Something similar the Mandelbrot calculation
+
+	LexerTree lex("z^2");
+	lex.doLexing();
+
+	ParserTree<d_complex> par(lex, ComplexParser());
+	ParserVariable<d_complex>& z_v = par.getVariable("z");
+
+	z_v.setValue(d_complex(3, 0));
+
+	TEST_ASSERT(abs(par.execute().real() - 9) < 0.001, "Result should be 9");
+}
+
 TEST_FUNCTION(fractal)
 {
 	// Something similar the Mandelbrot calculation
@@ -109,9 +116,9 @@ TEST_FUNCTION(fractal)
 	LexerTree lex("x ^ 2 + x ^ 3 + x ^ 4 + c");
 	lex.doLexing();
 
-	ParserTree<d_complex> par(lex, ComplexConverter());
-	ParserVariable<d_complex> c_v = par.getVariable("c");
-	ParserVariable<d_complex> x_v = par.getVariable("x");
+	ParserTree<d_complex> par(lex, ComplexParser());
+	ParserVariable<d_complex>& c_v = par.getVariable("c");
+	ParserVariable<d_complex>& x_v = par.getVariable("x");
 
 	for (double c = 0; c < 1; c += 1.0 / 200 / 150)
 	{
@@ -145,6 +152,7 @@ void TestParser()
 
 	TEST_FUNCTION_RUN(parse_simple);
 	TEST_FUNCTION_RUN(code_line);
+	TEST_FUNCTION_RUN(var);
 	TEST_FUNCTION_RUN_TIMING(fractal);
 	TEST_FUNCTION_RUN_TIMING(fractal_native);
 }

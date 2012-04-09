@@ -5,6 +5,19 @@
 #include "LexerTests.h"
 #include "tester_tools.h"
 
+TEST_FUNCTION(pow)
+{
+	LexerTree lex("z^2");
+	lex.doLexing();
+
+	TEST_ASSERT(lex.getRoot().getInnerItems().size() == 3, "number of 'z^2' lexer items is not 3");
+
+	list<LexerTreeItem>::const_iterator inners = lex.getRoot().getInnerItems().begin();
+	TEST_ASSERT((*inners++).getInnerText() == "z", "first item isn't 'z'");
+	TEST_ASSERT((*inners++).getInnerText() == "^", "second item isn't '^'");
+	TEST_ASSERT((*inners++).getInnerText() == "2", "third item isn't '2'");
+}
+
 TEST_FUNCTION(single_digit)
 {
 	LexerTreeItem lit("1");
@@ -194,6 +207,7 @@ void TestLexer()
 {
 	printf("\nStarting tests for Lexer:\n");
 
+	TEST_FUNCTION_RUN(pow);
 	TEST_FUNCTION_RUN(single_digit);
 	TEST_FUNCTION_RUN(single_letter);
 	TEST_FUNCTION_RUN(single_oper);

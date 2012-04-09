@@ -7,6 +7,8 @@
 #include <complex>
 #include <stdlib.h>
 #include <math.h>
+#include <typeinfo>
+#include <stdio.h>
 
 #include "Lexer.h"
 
@@ -99,7 +101,7 @@ public:
 	virtual ~ParserValue() {}
 };
 
-template <typename T> class ParserConstant : ParserValue<T>
+template <typename T> class ParserConstant : public ParserValue<T>
 {
 	friend class ParserTree<T>;
 protected:
@@ -113,7 +115,7 @@ public:
 	virtual ~ParserConstant() {}
 };
 
-template <typename T> class ParserVariable : ParserConstant<T>
+template <typename T> class ParserVariable : public ParserConstant<T>
 {
 	friend class ParserTree<T>;
 private:
@@ -121,9 +123,9 @@ private:
 protected:
 	ParserVariable(string name) : name(name) { }
 public:
-	void setValue(T value)
+	void setValue(T val)
 	{
-		this->value = value;
+		this->value = val;
 	}
 	string getName()
 	{
@@ -145,8 +147,7 @@ public:
 	const list<ParserOperation>& getInnerOperations() const { return innerOperations; }
 	virtual T getValue() const
 	{
-		// TODO: implement this
-		return 0;
+		throw 123;
 	}
 	virtual ~ParserBranch();
 };
@@ -285,7 +286,7 @@ template <typename T> T ParserTree<T>::execute()
 			}
 		}
 	}
-	return valueStack[stackTop];
+	return valueStack[stackTop - 1];
 }
 
 template <typename T> void ParserBranch<T>::pushToCodeString(list<CodeItem<T> >& code)
