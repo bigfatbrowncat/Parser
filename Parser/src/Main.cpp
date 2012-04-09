@@ -4,6 +4,7 @@
 
 #include <complex>
 
+#include "font2.h"
 #include "Lexer.h"
 #include "Parser.h"
 #include "ComplexParser.h"
@@ -149,6 +150,36 @@ void process_events()
 	}
 }
 
+void put_symbol(SDL_Surface *surface, wchar_t symbol, int x, int y, Uint8 font[], int symbol_w, int symbol_h, wchar_t encoding[], Uint8 r, Uint8 g, Uint8 b, int oversize)
+{
+	// Searching the symbol code in the current encoding
+	int code = 0;
+	for (unsigned int k = 0; k < wcslen(encoding); k++)
+	{
+		if (encoding[k] == symbol) { code = k; break; }
+	}
+
+	// Drawing it
+	for (int j = 0; j < symbol_h; j++)
+	for (int i = 0; i < symbol_w; i++)
+	{
+		if (font[j * symbol_w + i + (symbol_w * symbol_h) * code] == '#')
+		{
+			addpixel24(surface, (x + i) / oversize, (y + j) / oversize, r, g, b, 1.0 / oversize / oversize);
+		}
+	}
+}
+
+void put_string(SDL_Surface *surface, string str, int x, int y, Uint8 font[], int symbol_w, int symbol_h, int distance, wchar_t encoding[], Uint8 r, Uint8 g, Uint8 b, int oversize)
+{
+	int xc = x;
+	for (int i = 0; i < str.length(); i++)
+	{
+		put_symbol(surface, str[i], xc, y, font, symbol_w, symbol_h, encoding, r, g, b, oversize);
+		xc += symbol_w + distance;
+	}
+}
+
 int main(int argc, char* argv[])
 {
     printf("Starting UI event loop.\n");
@@ -159,7 +190,7 @@ int main(int argc, char* argv[])
     	return 1;
     }
 
-    SDL_WM_SetCaption("Mandelbrot", "Mandelbrot");
+    SDL_WM_SetCaption("Simplex", "Simplex");
 
     atexit(SDL_Quit);
     printf("Starting UI event loop.\n");
@@ -173,7 +204,9 @@ int main(int argc, char* argv[])
     	return 1;
     }
 
-    LexerTree lex("z^2+c");
+    string eq = "z^2+c";
+
+    LexerTree lex(eq);
     lex.doLexing();
 
     ParserTree<d_complex> parser(lex, ComplexParser());
@@ -194,9 +227,9 @@ int main(int argc, char* argv[])
         }
 
         char ttl[128];
-        sprintf(ttl, "Mandelbrot (steps: %d)", fracMat.getDepthMax());
+        sprintf(ttl, "Equation: %s, Steps: %d", eq.c_str(), fracMat.getDepthMax());
 
-        SDL_WM_SetCaption(ttl, "Mandelbrot");
+        SDL_WM_SetCaption("Mandelbrot - Simplex", "Mandelbrot - Simplex");
 
         for (int i = 0; i < width * 2; i++)
         {
@@ -209,6 +242,9 @@ int main(int argc, char* argv[])
       			addpixel24(screen, i / 2, j / 2, v, v, v, 0.25);
             }
         }
+        put_string(screen, "Mandelbrot", 20, 20, font, symbol_w, symbol_h, 2, encoding, 255, 255, 255, 1);
+        put_string(screen, ttl, 40, 40 + 2 * symbol_h + 6, font, symbol_w, symbol_h, 2, encoding, 255, 255, 255, 2);
+
         SDL_Delay(10);
         SDL_UpdateRect(screen, 0, 0, 0, 0);
     }
