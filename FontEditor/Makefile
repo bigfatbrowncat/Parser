@@ -1,20 +1,20 @@
 #################### Macros #####################
 
-PROJ = Simplex
+PROJ = FontEditor
 
-OBJECTS = Lexer Parser
+OBJECTS = 
 INCLUDE = -I../SDL-1.2.14/include/SDL
 
 EXTERNAL_BIN = ../SDL-1.2.14/bin
-TARGETNAME = Simplex
+TARGETNAME = FontEditor
 TARGET_OBJECTS = Main
 
 TESTERNAME = Test
-TESTER_OBJECTS = LexerTests ParserTests TesterMain
+TESTER_OBJECTS = TesterMain
 
 # CC macros
 COMMON_CFLAGS = -static-libgcc
-CFLAGS = -O3 -g -mwindows
+CFLAGS = -O0 -g -mwindows
 CDEFINES =
 
 # CPP macros (additional to C macros)

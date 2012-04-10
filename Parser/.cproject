@@ -24,10 +24,12 @@
 								<outputEntries>
 									<entry flags="VALUE_WORKSPACE_PATH" kind="outputPath" name="bin"/>
 									<entry flags="VALUE_WORKSPACE_PATH" kind="outputPath" name="obj"/>
+									<entry flags="VALUE_WORKSPACE_PATH" kind="outputPath" name="SDL-1.2.14/bin"/>
+									<entry flags="VALUE_WORKSPACE_PATH" kind="outputPath" name="SDL-1.2.14/lib"/>
 								</outputEntries>
 							</builder>
 							<tool id="cdt.managedbuild.tool.gnu.assembler.mingw.base.175452211" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.mingw.base">
-								<option id="gnu.both.asm.option.include.paths.118360733" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+								<option id="gnu.both.asm.option.include.paths.118360733" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Parser/SDL-1.2.14/include/SDL}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1471172826" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
