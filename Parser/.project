@@ -80,11 +80,4 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>SDL-1.2.14</name>
-			<type>2</type>
-			<locationURI>WORKSPACE_LOC/SDL-1.2.14</locationURI>
-		</link>
-	</linkedResources>
 </projectDescription>

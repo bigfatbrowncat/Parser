@@ -76,8 +76,8 @@ int drawing_box_x = 30;
 int drawing_box_y = 50;
 int drawing_box_frame_width = 5;
 
-int symbol_w = 9;
-int symbol_h = 12;
+int symbol_w = 10;
+int symbol_h = 16;
 
 int cell_width = 10;
 int oversize = 3;
@@ -100,28 +100,57 @@ int current_char = 0;
 void draw(SDL_Surface* surface);
 void process_events();
 
-void scanSymbols(string filename)
+void allocSymbols()
 {
-	FILE* f = fopen(filename.c_str(), "r");
-	fscanf(f, "%d %d %d\n", &symbol_w, &symbol_h, &oversize);
-	//fwscanf(f, L"%s\n", encoding);
-	// TODO: Encoding should have the same size all the time! Otherwise, segfault will appear
+    symbol = new bool*[encoding_size];
 
     for (int ch = 0; ch < encoding_size; ch++)
     {
-    	for (int j = 0; j < symbol_h * oversize; j++)
-    	{
-    		for (int i = 0; i < symbol_w * oversize; i++)
-    		{
-    			char c = 0;
-    			fscanf(f, "%c", &c);
-    			symbol[ch][j * symbol_w * oversize + i] = (c == '#');
-    		}
-			fscanf(f, "\n");
-    	}
-		fscanf(f, "\n");
+    	symbol[ch] = new bool[symbol_w * oversize * symbol_h * oversize];
+    	for (int i = 0; i < symbol_w * oversize * symbol_h * oversize; i++)
+    		symbol[ch][i] = false;
     }
-    fclose(f);
+}
+
+void freeSymbols()
+{
+    for (int ch = 0; ch < encoding_size; ch++)
+    {
+    	delete [] symbol[ch];
+    }
+    delete [] symbol;
+}
+
+bool scanSymbols(string filename)
+{
+	FILE* f = fopen(filename.c_str(), "r");
+	if (f != NULL)
+	{
+		fscanf(f, "%d %d %d", &symbol_w, &symbol_h, &oversize);
+		fgetc(f);
+	}
+	allocSymbols();
+
+	if (f != NULL)
+	{
+		for (int ch = 0; ch < encoding_size; ch++)
+		{
+			for (int j = 0; j < symbol_h * oversize; j++)
+			{
+				for (int i = 0; i < symbol_w * oversize; i++)
+				{
+					char c = fgetc(f);
+					symbol[ch][j * symbol_w * oversize + i] = (c == '#');
+				}
+				fgetc(f);
+			}
+			fgetc(f);
+		}
+		fclose(f);
+		return true;
+	}
+	else
+		return false;
 }
 
 void printSymbols(string filename)
@@ -203,14 +232,6 @@ int main(int argc, char* argv[])
     	return 1;
     }
 
-    symbol = new bool*[encoding_size];
-
-    for (int ch = 0; ch < encoding_size; ch++)
-    {
-    	symbol[ch] = new bool[symbol_w * oversize * symbol_h * oversize];
-    	for (int i = 0; i < symbol_w * oversize * symbol_h * oversize; i++)
-    		symbol[ch][i] = false;
-    }
 
     scanSymbols("font.txt");
 
@@ -232,11 +253,7 @@ int main(int argc, char* argv[])
 
     printSymbols("font.txt");
 
-    for (int ch = 0; ch < encoding_size; ch++)
-    {
-    	delete [] symbol[ch];
-    }
-    delete [] symbol;
+    freeSymbols();
 }
 
 void process_events()
