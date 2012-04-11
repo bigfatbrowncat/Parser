@@ -73,8 +73,13 @@ void blendFrame(SDL_Surface *surface, int x1, int x2, int y1, int y2, Uint8 r, U
 
 
 int drawing_box_x = 30;
-int drawing_box_y = 50;
+int drawing_box_y = 70;
+
+int symbol_preview_x = 400;
+int symbol_preview_y = 70;
+
 int drawing_box_frame_width = 5;
+int symbol_preview_frame_width = 5;
 
 int symbol_w = 10;
 int symbol_h = 16;
@@ -85,7 +90,7 @@ int oversize = 3;
 wchar_t* encoding = L" "
                      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                      "abcdefghijklmnopqrstuvwxyz"
-                     "0123456789.,:;!?@#$%^&*()[]{}_-+<>=~\"'`/\\|                                   ";
+                     "0123456789.,:;!?@#$%^&*()[]{}_-+<>=~\"'`/\\|";
 int encoding_size = 97;
 
 bool** symbol;
@@ -439,7 +444,11 @@ void draw(SDL_Surface* surface)
 							 drawing_box_y + drawing_box_frame_width + cell_width * oversize * (j + 1), 128, 128, 128, 0.8);
 	}
 
-	putSymbol(surface, current_char, drawing_box_x + 2 * drawing_box_frame_width + symbol_w * oversize * cell_width + 20, drawing_box_y, 255, 255, 255, 3);
+	blendFrame(surface, symbol_preview_x, symbol_preview_x + symbol_w + 2 * symbol_preview_frame_width,
+	                    symbol_preview_y, symbol_preview_y + symbol_h + 2 * symbol_preview_frame_width, 255, 255, 255, 1);
+
+	putSymbol(surface, current_char, symbol_preview_x + symbol_preview_frame_width,
+	                                 symbol_preview_y + symbol_preview_frame_width, 255, 255, 255, 3);
 
 	for (int ch = 0; ch < encoding_size; ch++)
 	{
