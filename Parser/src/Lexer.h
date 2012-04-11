@@ -95,14 +95,17 @@ class LexerTree
 private:
 	LexerTreeItem* root;
 	string code;
+	void doLexing();
 public:
-	LexerTree(string code) : root(NULL), code(code) {}
+	LexerTree(string code) : root(NULL), code(code)
+	{
+		doLexing();
+	}
 	~LexerTree()
 	{
 		if (root != NULL) delete root;
 	}
 
-	void doLexing();
 	const LexerTreeItem& getRoot() const { return *root; }
 };
 

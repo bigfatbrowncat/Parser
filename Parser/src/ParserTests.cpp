@@ -19,7 +19,6 @@ public:
 TEST_FUNCTION(parse_simple)
 {
 	LexerTree lex("2.5 + q * (3 - 5 + moo) ");
-	lex.doLexing();
 
 	ParserTree<d_complex> par(lex, ComplexParser());
 
@@ -48,7 +47,6 @@ TEST_FUNCTION(parse_simple)
 TEST_FUNCTION(code_line)
 {
 	LexerTree lex("3 + 4 * 2 / (1 - 5)^2");
-	lex.doLexing();
 
 	ParserTree<d_complex> par(lex, ComplexParser());
 
@@ -99,7 +97,6 @@ TEST_FUNCTION(var)
 	// Something similar the Mandelbrot calculation
 
 	LexerTree lex("z^2");
-	lex.doLexing();
 
 	ParserTree<d_complex> par(lex, ComplexParser());
 	ParserVariable<d_complex>& z_v = par.getVariable("z");
@@ -114,7 +111,6 @@ TEST_FUNCTION(fractal)
 	// Something similar the Mandelbrot calculation
 
 	LexerTree lex("x ^ 2 + x ^ 3 + x ^ 4 + c");
-	lex.doLexing();
 
 	ParserTree<d_complex> par(lex, ComplexParser());
 	ParserVariable<d_complex>& c_v = par.getVariable("c");

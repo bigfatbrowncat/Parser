@@ -8,7 +8,6 @@
 TEST_FUNCTION(pow)
 {
 	LexerTree lex("z^2");
-	lex.doLexing();
 
 	TEST_ASSERT(lex.getRoot().getInnerItems().size() == 3, "number of 'z^2' lexer items is not 3");
 
@@ -138,7 +137,6 @@ TEST_FUNCTION(braces)
 TEST_FUNCTION(deep_lexing)
 {
 	LexerTree lex("1 *(23 + a[56] )");
-	lex.doLexing();
 
 	const LexerTreeItem& root = lex.getRoot();
 	TEST_ASSERT(root.getInnerItems().size() == 3, "there should be 3 root inner items");
@@ -169,7 +167,6 @@ TEST_FUNCTION(extra_opening_brace)
 	try
 	{
 		LexerTree lex("2 +  ( (123 - 654 )");
-		lex.doLexing();
 	}
 	catch (int i)
 	{
@@ -189,7 +186,6 @@ TEST_FUNCTION(extra_closing_brace)
 	try
 	{
 		LexerTree lex("2 +   (123 - 654 )) ");
-		lex.doLexing();
 	}
 	catch (int i)
 	{

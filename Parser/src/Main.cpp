@@ -79,35 +79,27 @@ class FractalMatrix
 {
 private:
 	int width, height;
-	double *distance, *argument;
+	double *level;
 	bool* out;
 	d_complex* zLast;
 	int depthMax;
 	double x0, y0, scale, bailOutRadius;
-	SDL_Surface* surf;
-	SDL_Surface* tex;
-	SDL_Surface* tex_mask;
 
 	ParserTree<d_complex>* parser;
 public:
 	FractalMatrix(int width, int height) : width(width), height(height)
 	{
-		distance = new double[width * height];
-		argument = new double[width * height];
+		level = new double[width * height];
 		out = new bool[width * height];
 		zLast = new d_complex[width * height];
 	}
-	double getDistance(int x, int y) { return distance[width * y + x]; }
-	double getArgument(int x, int y) { return argument[width * y + x]; }
+	double getLevel(int x, int y) { return level[width * y + x]; }
 	bool isOut(int x, int y) { return out[width * y + x]; }
 	int getDepthMax() { return depthMax; }
 	d_complex getZLast(int x, int y) { return zLast[width * y + x]; }
 
-	void start(ParserTree<d_complex>& parser, double x0, double y0, double scale, double bailOutRadius, SDL_Surface* surf, SDL_Surface* tex, SDL_Surface* tex_mask)
+	void start(ParserTree<d_complex>& parser, double x0, double y0, double scale, double bailOutRadius)
 	{
-		this->surf = surf;
-		this->tex = tex;
-		this->tex_mask = tex_mask;
 		this->x0 = x0;
 		this->y0 = y0;
 		this->scale = scale;
@@ -116,10 +108,31 @@ public:
 
 		for (int i = 0; i < width * height; i++)
 		{
-			distance[i] = 1e+30; argument[i] = 0;
+			level[i] = 0;
 			out[i] = 0; zLast[i] = 0;
 		}
 		depthMax = 0;
+	}
+
+	double i_to_cx(int i)
+	{
+		int avg_size = (width + height) / 2;
+		return (i - width  / 2) / scale / avg_size + x0;
+	}
+	double j_to_cy(int j)
+	{
+		int avg_size = (width + height) / 2;
+		return (j - height / 2) / scale / avg_size + y0;
+	}
+	int cx_to_i(double cx)
+	{
+		int avg_size = (width + height) / 2;
+		return (cx - x0) * avg_size * scale + width / 2;
+	}
+	int cy_to_j(double cy)
+	{
+		int avg_size = (width + height) / 2;
+		return (cy - y0) * avg_size * scale + height / 2;
 	}
 
 	// Returns the new bail-outs. Can be used to determine how "successful" it is
@@ -129,8 +142,6 @@ public:
 	    ParserVariable<d_complex>& z_var = parser->getVariable("z");
 	    ParserVariable<d_complex>& c_var = parser->getVariable("c");
 		int avg_size = (width + height) / 2;
-
-
 
 		for (int i = 0; i < width; i++)
 	    {
@@ -150,46 +161,15 @@ public:
 						zLast[width * j + i] = z_var.getValue();
 
 						// Minimizing the distance
-						double dist = abs(zLast[width * j + i] - d_complex(0));
-						double phi = arg(zLast[width * j + i] - d_complex(0));
+						double dist = abs(zLast[width * j + i] - d_complex(0,0));
 
-						//if (dist < distance[width * j + i])
-						{
-							distance[width * j + i] = dist;
+						//dist /= 50 / sqrt(width + height);
 
-/*		            	Uint8 r = 255 * sin(phi)* sin(phi);
-		            	Uint8 g = 255 * cos(phi)* cos(phi);
-	            		Uint8 b = 0;*/
+	            		float a = exp(-dist * dist);
 
-						dist = dist * (tex->w + tex->h) / 2;// * log(depthMax + 1);
-						/*if (dist > 300) dist = 300;
-						if (dist < 0) dist = 300;*/
+	            		level[width * j + i] = level[width * j + i] * (1 - a) + a;
 
-		            	int x = 110 + dist * cos(phi);
-		            	int y = 152 + dist * sin(phi);
-		            	if (x < 0) x = 0;
-		            	if (y < 0) y = 0;
-		            	if (x > tex->w - 1) x = tex->w - 1;
-		            	if (y > tex->h - 1) y = tex->h - 1;
-
-		            	Uint8 r = getPixel24_R(tex, x, y);
-		            	Uint8 g = getPixel24_G(tex, x, y);
-		            	Uint8 b = getPixel24_B(tex, x, y);
-
-		            	float a = (float)getPixel24_R(tex_mask, x, y) / 255;
-		            	if (a < 0) a = 0;
-		            	if (a > 1) a = 1;
-
-		            	blendPixel24(surf, i, j, r, g, b, a);
-
-						/*
-						if (dist < distance[width * j + i])
-						{
-							distance[width * j + i] = dist;
-							argument[width * j + i] = phi;
-						}*/
-						}
-
+	            		//blendPixel24(surf, i, j, r, g, b, a);
 
 						if (abs(zLast[width * j + i]) > bailOutRadius)
 						{
@@ -202,18 +182,26 @@ public:
 	        }
 	    }
 	    depthMax += steps;
-	    return 1000;//newBailOuts;
+	    return newBailOuts;
 	}
 
 	~FractalMatrix()
 	{
-		delete [] distance;
+		delete [] level;
 		delete [] zLast;
 		delete [] out;
 	}
 };
 
 bool quit_pending = false;
+double xc = 0, yc = 0, zoom = 0.3;
+bool success = false;
+bool run_started = false;
+int scale = 1;
+string eq = "z^3+c^(3/2)";
+LexerTree lex(eq);
+ParserTree<d_complex> parser(lex, ComplexParser());
+FractalMatrix fracMat(scale * width, scale * height);
 
 void process_events()
 {
@@ -233,6 +221,14 @@ void process_events()
 			}
 			break;
 		case SDL_KEYUP:
+			break;
+		case SDL_MOUSEBUTTONDOWN:
+			zoom *= 2;
+			xc = fracMat.i_to_cx(event.button.x);
+			yc = fracMat.j_to_cy(event.button.y);
+			success = false;
+			run_started = false;
+		    fracMat.start(parser, xc, yc, zoom, 3);
 			break;
 		case SDL_QUIT:
 			/* Handle quit requests (like Ctrl-c). */
@@ -274,8 +270,6 @@ void put_string(SDL_Surface *surface, string str, int x, int y, Uint8 font[], in
 
 int main(int argc, char* argv[])
 {
-    printf("Starting UI event loop.\n");
-    fflush(stdout);
     if( SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
     {
     	printf("Could not initialize SDL: %d", SDL_GetError());
@@ -285,7 +279,6 @@ int main(int argc, char* argv[])
     SDL_WM_SetCaption("Simplex", "Simplex");
 
     atexit(SDL_Quit);
-    printf("Starting UI event loop.\n");
 
     SDL_Surface* screen;
     screen = SDL_SetVideoMode(width, height, 24, SDL_HWSURFACE | SDL_DOUBLEBUF);
@@ -296,25 +289,13 @@ int main(int argc, char* argv[])
     	return 1;
     }
 
-    string eq = "z^2+c";
+    int runaways_to_success = 200.0 / (640 * 480) * width * height;
 
-    LexerTree lex(eq);
-    lex.doLexing();
 
-    ParserTree<d_complex> parser(lex, ComplexParser());
-
-    FractalMatrix fracMat(width, height);
-
-    SDL_Surface* tex = SDL_LoadBMP("eye.bmp");
-    SDL_Surface* tex_mask = SDL_LoadBMP("eye_mask.bmp");
-    SDL_LockSurface(tex);
-    SDL_LockSurface(tex_mask);
-    fracMat.start(parser, -0.5, 0, 0.3, 2, screen, tex, tex_mask);
+    fracMat.start(parser, xc, yc, zoom, 3);
 
     quit_pending = false;
     printf("Starting UI event loop.\n");
-    bool success = false;
-    int step = 0;
 
     while( !quit_pending )
     {
@@ -322,32 +303,42 @@ int main(int argc, char* argv[])
 
         if (!success)
         {
-            SDL_Rect rct;
-            rct.x = 0; rct.y = 0; rct.w = width; rct.h = height;
-        	//SDL_FillRect(screen, &rct, 0xFFFFFF);
-        	success = (fracMat.process(1) < 50);
+        	int runaways = fracMat.process(1);
+        	if (runaways > runaways_to_success) run_started = true;
+
+        	if (run_started) success = (runaways < 200);
         }
+	    SDL_Rect rct;
+	    rct.x = 0; rct.y = 0; rct.w = width; rct.h = height;
+		SDL_FillRect(screen, &rct, 0x0000AA);
+
+		for (int i = 0; i < width; i++)
+		{
+			for (int j = 0; j < height; j++)
+			{
+				double za = 0, zl = 0;
+				for (int p = 0; p < scale; p++)
+				{
+					for (int q = 0; q < scale; q++)
+					{
+						if (!fracMat.isOut(scale * i + p, scale * j + q))
+							za += 1.0 / scale / scale;
+						else
+							zl += fracMat.getLevel(scale * i + p, scale * j + q) / scale / scale;
+					}
+				}
+
+				blendPixel24(screen, i, j, 255, 220, 0, zl);
+				blendPixel24(screen, i, j, 0, 0, 0, za);
+
+			}
+		}
 
         char ttl[128];
         sprintf(ttl, "Mandelbrot - Simplex [Equation: %s, Steps: %d]", eq.c_str(), fracMat.getDepthMax());
 
         SDL_WM_SetCaption(ttl, ttl);
-/*
 
-        for (int i = 0; i < width; i++)
-        {
-            for (int j = 0; j < height; j++)
-            {
-            	double dist = fracMat.getDistance(i, j);// / fracMat.getDepthMax();
-            	double phi = fracMat.getArgument(i, j);// / fracMat.getDepthMax();
-
-            }
-        }*/
-        //put_string(screen, "Mandelbrot", 20, 20, font, symbol_w, symbol_h, 2, encoding, 255, 255, 255, 1);
-        //put_string(screen, ttl, 40, 40 + 2 * symbol_h + 6, font, symbol_w, symbol_h, 2, encoding, 255, 255, 255, 2);
-        //put_string(screen, "Mandelbrot set", 30, 30, font, symbol_w, symbol_h, 2, encoding, 255, 255, 255, 2);
-
-        step ++;
         SDL_Delay(10);
         SDL_UpdateRect(screen, 0, 0, 0, 0);
     }
