@@ -161,11 +161,11 @@ public:
 						zLast[width * j + i] = z_var.getValue();
 
 						// Minimizing the distance
-						double dist = abs(zLast[width * j + i] - d_complex(0,0));
+						double dist = abs(zLast[width * j + i]);
 
 						//dist /= 50 / sqrt(width + height);
 
-	            		float a = exp(-dist * dist);
+	            		float a = sin(1.0/dist) * sin(1.0/dist);//exp(-dist * dist);
 
 	            		level[width * j + i] = level[width * j + i] * (1 - a) + a;
 
@@ -197,11 +197,12 @@ bool quit_pending = false;
 double xc = 0, yc = 0, zoom = 0.3;
 bool success = false;
 bool run_started = false;
-int scale = 1;
+int scale_up = 4;
+int scale_down = 4;
 string eq = "z^3+c^(3/2)";
 LexerTree lex(eq);
 ParserTree<d_complex> parser(lex, ComplexParser());
-FractalMatrix fracMat(scale * width, scale * height);
+FractalMatrix fracMat(scale_up * width / scale_down, scale_up * height / scale_down);
 
 void process_events()
 {
@@ -312,25 +313,30 @@ int main(int argc, char* argv[])
 	    rct.x = 0; rct.y = 0; rct.w = width; rct.h = height;
 		SDL_FillRect(screen, &rct, 0x0000AA);
 
-		for (int i = 0; i < width; i++)
+		for (int i = 0; i < width / scale_down; i++)
 		{
-			for (int j = 0; j < height; j++)
+			for (int j = 0; j < height / scale_down; j++)
 			{
 				double za = 0, zl = 0;
-				for (int p = 0; p < scale; p++)
+				for (int p = 0; p < scale_up; p++)
 				{
-					for (int q = 0; q < scale; q++)
+					for (int q = 0; q < scale_up; q++)
 					{
-						if (!fracMat.isOut(scale * i + p, scale * j + q))
-							za += 1.0 / scale / scale;
+						if (!fracMat.isOut(scale_up * i + p, scale_up * j + q))
+							za += 1.0 / scale_up / scale_up;
 						else
-							zl += fracMat.getLevel(scale * i + p, scale * j + q) / scale / scale;
+							zl += fracMat.getLevel(scale_up * i + p, scale_up * j + q) / scale_up / scale_up;
 					}
 				}
 
-				blendPixel24(screen, i, j, 255, 220, 0, zl);
-				blendPixel24(screen, i, j, 0, 0, 0, za);
-
+				for (int p = 0; p < scale_down; p++)
+				{
+					for (int q = 0; q < scale_down; q++)
+					{
+						blendPixel24(screen, i * scale_down + p, j * scale_down + q, 255, 220, 0, zl);
+						blendPixel24(screen, i * scale_down + p, j * scale_down + q, 0, 0, 0, za);
+					}
+				}
 			}
 		}
 
