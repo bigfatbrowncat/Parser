@@ -86,6 +86,9 @@ private:
 	double x0, y0, scale, bailOutRadius;
 
 	ParserTree<d_complex>* parser;
+protected:
+	//operator = ()	// TODO: add this here
+
 public:
 	FractalMatrix(int width, int height) : width(width), height(height)
 	{
@@ -97,6 +100,21 @@ public:
 	bool isOut(int x, int y) { return out[width * y + x]; }
 	int getDepthMax() { return depthMax; }
 	d_complex getZLast(int x, int y) { return zLast[width * y + x]; }
+
+	FractalMatrix scaleUp(int k)
+	{
+		FractalMatrix res(width * k, height * k);
+		for (int j = 0; j < height; j++)
+		for (int i = 0; i < width; i++)
+		{
+			for (int p = 0; p < k; p++)
+			for (int q = 0; q < k; q++)
+			{
+				res.level[width * k * (j + q) + (i + p)] = level[j * width + i];
+			}
+		}
+		return res;
+	}
 
 	void start(ParserTree<d_complex>& parser, double x0, double y0, double scale, double bailOutRadius)
 	{
@@ -197,8 +215,8 @@ bool quit_pending = false;
 double xc = 0, yc = 0, zoom = 0.3;
 bool success = false;
 bool run_started = false;
-int scale_up = 4;
-int scale_down = 4;
+int scale_up = 1;
+int scale_down = 8;
 string eq = "z^3+c^(3/2)";
 LexerTree lex(eq);
 ParserTree<d_complex> parser(lex, ComplexParser());
@@ -302,12 +320,32 @@ int main(int argc, char* argv[])
     {
         process_events();
 
-        if (!success)
+        if (!success || !run_started)
         {
         	int runaways = fracMat.process(1);
         	if (runaways > runaways_to_success) run_started = true;
 
-        	if (run_started) success = (runaways < 200);
+        	if (run_started) success = (runaways < 100);
+        }
+        else
+        {
+        	if (scale_down > 1)
+        	{
+        		scale_down /= 2;
+        		fracMat = fracMat.scaleUp(2);
+        		success = false;
+        		run_started = false;
+        	}
+        	else
+        	{
+        		if (scale_up < 2)
+        		{
+        			scale_up *= 2;
+            		fracMat = fracMat.scaleUp(2);
+            		success = false;
+            		run_started = false;
+        		}
+        	}
         }
 	    SDL_Rect rct;
 	    rct.x = 0; rct.y = 0; rct.w = width; rct.h = height;
