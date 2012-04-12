@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <stdio.h>
 #include <assert.h>
+#include <omp.h>
 
 #include <complex>
 
@@ -86,10 +87,14 @@ private:
 	double x0, y0, scale, bailOutRadius;
 
 	ParserTree<d_complex>* parser;
-protected:
-	//operator = ()	// TODO: add this here
 
+protected:
+	FractalMatrix& operator = (const FractalMatrix& other)
+	{
+		// Never use it!
+	}
 public:
+
 	FractalMatrix(int width, int height) : width(width), height(height)
 	{
 		level = new double[width * height];
@@ -101,19 +106,37 @@ public:
 	int getDepthMax() { return depthMax; }
 	d_complex getZLast(int x, int y) { return zLast[width * y + x]; }
 
-	FractalMatrix scaleUp(int k)
+	void scaleUp(int k)
 	{
-		FractalMatrix res(width * k, height * k);
+		int nw = width * k, nh = height * k;
+
+		double* nLevel = new double[nw * nh];
+		bool* nOut = new bool[nw * nh];
+		d_complex* nZLast = new d_complex[nw * nh];
+
 		for (int j = 0; j < height; j++)
 		for (int i = 0; i < width; i++)
 		{
 			for (int p = 0; p < k; p++)
 			for (int q = 0; q < k; q++)
 			{
-				res.level[width * k * (j + q) + (i + p)] = level[j * width + i];
+				int ii = k * i + p;
+				int jj = k * j + q;
+
+				nLevel[nw * jj + ii] = level[j * width + i];
+				nOut[nw * jj + ii] = false;//out[j * width + i];
+				nZLast[nw * jj + ii] = zLast[j * width + i];
 			}
 		}
-		return res;
+
+		delete [] level;
+		delete [] out;
+		delete [] zLast;
+
+		width = nw; height = nh;
+		level = nLevel;
+		out = nOut;
+		zLast = nZLast;
 	}
 
 	void start(ParserTree<d_complex>& parser, double x0, double y0, double scale, double bailOutRadius)
@@ -127,7 +150,8 @@ public:
 		for (int i = 0; i < width * height; i++)
 		{
 			level[i] = 0;
-			out[i] = 0; zLast[i] = 0;
+			out[i] = 0;
+			zLast[i] = 0;
 		}
 		depthMax = 0;
 	}
@@ -161,9 +185,11 @@ public:
 	    ParserVariable<d_complex>& c_var = parser->getVariable("c");
 		int avg_size = (width + height) / 2;
 
-		for (int i = 0; i < width; i++)
+		omp_set_num_threads(8);
+		#pragma omp for
+        for (int j = 0; j < height; j++)
 	    {
-	        for (int j = 0; j < height; j++)
+    		for (int i = 0; i < width; i++)
 	        {
 	        	if (!out[width * j + i])
 	        	{
@@ -178,27 +204,21 @@ public:
 						z_var.setValue(parser->execute());
 						zLast[width * j + i] = z_var.getValue();
 
-						// Minimizing the distance
-						double dist = abs(zLast[width * j + i]);
-
-						//dist /= 50 / sqrt(width + height);
-
-	            		float a = sin(1.0/dist) * sin(1.0/dist);//exp(-dist * dist);
-
-	            		level[width * j + i] = level[width * j + i] * (1 - a) + a;
-
-	            		//blendPixel24(surf, i, j, r, g, b, a);
-
-						if (abs(zLast[width * j + i]) > bailOutRadius)
+						if (abs(z_var.getValue()) > bailOutRadius)
 						{
 							out[width * j + i] = true;
+							#pragma omp critical
 							newBailOuts++;
 						}
+
+						level[width * j + i] = abs(zLast[width * j + i]);
+
 					}
 
 	        	}
 	        }
 	    }
+		#pragma omp barrier
 	    depthMax += steps;
 	    return newBailOuts;
 	}
@@ -220,7 +240,7 @@ int scale_down = 8;
 string eq = "z^3+c^(3/2)";
 LexerTree lex(eq);
 ParserTree<d_complex> parser(lex, ComplexParser());
-FractalMatrix fracMat(scale_up * width / scale_down, scale_up * height / scale_down);
+FractalMatrix* fracMat;
 
 void process_events()
 {
@@ -243,11 +263,11 @@ void process_events()
 			break;
 		case SDL_MOUSEBUTTONDOWN:
 			zoom *= 2;
-			xc = fracMat.i_to_cx(event.button.x);
-			yc = fracMat.j_to_cy(event.button.y);
+			xc = fracMat->i_to_cx(event.button.x);
+			yc = fracMat->j_to_cy(event.button.y);
 			success = false;
 			run_started = false;
-		    fracMat.start(parser, xc, yc, zoom, 3);
+		    fracMat->start(parser, xc, yc, zoom, 3);
 			break;
 		case SDL_QUIT:
 			/* Handle quit requests (like Ctrl-c). */
@@ -310,8 +330,8 @@ int main(int argc, char* argv[])
 
     int runaways_to_success = 200.0 / (640 * 480) * width * height;
 
-
-    fracMat.start(parser, xc, yc, zoom, 3);
+    fracMat = new FractalMatrix(scale_up * width / scale_down, scale_up * height / scale_down);
+    fracMat->start(parser, xc, yc, zoom, 3);
 
     quit_pending = false;
     printf("Starting UI event loop.\n");
@@ -322,17 +342,58 @@ int main(int argc, char* argv[])
 
         if (!success || !run_started)
         {
-        	int runaways = fracMat.process(1);
+        	int runaways = fracMat->process(1);
         	if (runaways > runaways_to_success) run_started = true;
 
         	if (run_started) success = (runaways < 100);
         }
         else
         {
+        	// Painting the success
+    	    SDL_Rect rct;
+    	    rct.x = 0; rct.y = 0; rct.w = width; rct.h = height;
+    		SDL_FillRect(screen, &rct, 0x0000AA);
+
+    		for (int i = 0; i < width / scale_down; i++)
+    		{
+    			for (int j = 0; j < height / scale_down; j++)
+    			{
+    				double a = 1;
+    				double r = 0, g = 0, b = 0;
+
+    				for (int p = 0; p < scale_up; p++)
+    				{
+    					for (int q = 0; q < scale_up; q++)
+    					{
+    						//if (!fracMat->isOut(scale_up * i + p, scale_up * j + q))
+//    							a += 1.0 / scale_up / scale_up;
+  //  						else
+    						{
+    							double w = 1 - exp(-fracMat->getLevel(scale_up * i + p, scale_up * j + q));
+    							r += w * 255 / scale_up / scale_up;
+    							g += w * 255 / scale_up / scale_up;
+    							b += w * 255 / scale_up / scale_up;
+    						}
+
+    					}
+    				}
+
+    				for (int p = 0; p < scale_down; p++)
+    				{
+    					for (int q = 0; q < scale_down; q++)
+    					{
+    						blendPixel24(screen, i * scale_down + p, j * scale_down + q, (int)r, (int)g, (int)b, 1);
+    					}
+    				}
+    			}
+    		}
+
         	if (scale_down > 1)
         	{
         		scale_down /= 2;
-        		fracMat = fracMat.scaleUp(2);
+        		delete fracMat;
+        		fracMat = new FractalMatrix(scale_up * width / scale_down, scale_up * height / scale_down);
+        	    fracMat->start(parser, xc, yc, zoom, 3);
         		success = false;
         		run_started = false;
         	}
@@ -341,45 +402,18 @@ int main(int argc, char* argv[])
         		if (scale_up < 2)
         		{
         			scale_up *= 2;
-            		fracMat = fracMat.scaleUp(2);
+            		delete fracMat;
+            		fracMat = new FractalMatrix(scale_up * width / scale_down, scale_up * height / scale_down);
+            	    fracMat->start(parser, xc, yc, zoom, 3);
             		success = false;
             		run_started = false;
         		}
         	}
         }
-	    SDL_Rect rct;
-	    rct.x = 0; rct.y = 0; rct.w = width; rct.h = height;
-		SDL_FillRect(screen, &rct, 0x0000AA);
 
-		for (int i = 0; i < width / scale_down; i++)
-		{
-			for (int j = 0; j < height / scale_down; j++)
-			{
-				double za = 0, zl = 0;
-				for (int p = 0; p < scale_up; p++)
-				{
-					for (int q = 0; q < scale_up; q++)
-					{
-						if (!fracMat.isOut(scale_up * i + p, scale_up * j + q))
-							za += 1.0 / scale_up / scale_up;
-						else
-							zl += fracMat.getLevel(scale_up * i + p, scale_up * j + q) / scale_up / scale_up;
-					}
-				}
-
-				for (int p = 0; p < scale_down; p++)
-				{
-					for (int q = 0; q < scale_down; q++)
-					{
-						blendPixel24(screen, i * scale_down + p, j * scale_down + q, 255, 220, 0, zl);
-						blendPixel24(screen, i * scale_down + p, j * scale_down + q, 0, 0, 0, za);
-					}
-				}
-			}
-		}
 
         char ttl[128];
-        sprintf(ttl, "Mandelbrot - Simplex [Equation: %s, Steps: %d]", eq.c_str(), fracMat.getDepthMax());
+        sprintf(ttl, "Mandelbrot - Simplex [Equation: %s, Steps: %d]", eq.c_str(), fracMat->getDepthMax());
 
         SDL_WM_SetCaption(ttl, ttl);
 

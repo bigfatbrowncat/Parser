@@ -72,10 +72,14 @@ void blendFrame(SDL_Surface *surface, int x1, int x2, int y1, int y2, Uint8 r, U
 
 
 
-int drawing_box_x = 30;
+int drawing_box_x = 35;
 int drawing_box_y = 70;
 
-int symbol_preview_x = 400;
+int char_view_length_half = 25;
+int char_view_x = 15;
+int char_view_y = 10;
+
+int symbol_preview_x = 387;
 int symbol_preview_y = 70;
 
 int drawing_box_frame_width = 5;
@@ -444,18 +448,33 @@ void draw(SDL_Surface* surface)
 							 drawing_box_y + drawing_box_frame_width + cell_width * oversize * (j + 1), 128, 128, 128, 0.8);
 	}
 
+	// Currently char preview
+
 	blendFrame(surface, symbol_preview_x, symbol_preview_x + symbol_w + 2 * symbol_preview_frame_width,
 	                    symbol_preview_y, symbol_preview_y + symbol_h + 2 * symbol_preview_frame_width, 255, 255, 255, 1);
 
 	putSymbol(surface, current_char, symbol_preview_x + symbol_preview_frame_width,
 	                                 symbol_preview_y + symbol_preview_frame_width, 255, 255, 255, 3);
 
-	for (int ch = 0; ch < encoding_size; ch++)
+	// Drawing characters palette
+
+
+	for (int ch = current_char - char_view_length_half; ch <= current_char + char_view_length_half; ch++)
 	{
-		if (ch == current_char)
+		int ind = ch - (current_char - char_view_length_half);
+		int ch_ind = (ch + encoding_size) % encoding_size;
+
+		int x1 = char_view_x + (symbol_w + 5) * ind;
+		int x2 = char_view_x + (symbol_w + 5) * (ind + 1) - 1;
+		int y1 = char_view_y;
+		int y2 = char_view_y + symbol_h + 4;
+
+		blendFrame(surface, x1, x2, y1, y2, 128, 128, 128, 1);
+		if (ch_ind == current_char)
 		{
-			blendFrame(surface, drawing_box_x + (symbol_w + 2) * ch, drawing_box_x + (symbol_w + 2) * (ch + 1) - 1, 5, 5 + symbol_h, 128, 128, 128, 1);
+			blendFrame(surface, x1, x2, y1, y2, 255, 255, 255, 1);
 		}
-		putSymbol(surface, ch, drawing_box_x + (symbol_w + 2) * ch, 5, 255, 255, 255, 3);
+
+		putSymbol(surface, ch_ind, x1 + 3, y1 + 3, 255, 255, 255, 3);
 	}
 }
