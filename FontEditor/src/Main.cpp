@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
     printf("Starting UI event loop.\n");
 
     SDL_Surface* screen;
-    screen = SDL_SetVideoMode(width, height, 24, SDL_HWSURFACE | SDL_DOUBLEBUF);
+    screen = SDL_SetVideoMode(width, height, 24, SDL_HWSURFACE | /*SDL_FULLSCREEN |*/ SDL_DOUBLEBUF);
 
     if(screen == NULL)
     {

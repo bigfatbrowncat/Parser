@@ -320,7 +320,7 @@ int main(int argc, char* argv[])
     atexit(SDL_Quit);
 
     SDL_Surface* screen;
-    screen = SDL_SetVideoMode(width, height, 24, SDL_HWSURFACE | SDL_DOUBLEBUF);
+    screen = SDL_SetVideoMode(width, height, 24, (SDL_HWSURFACE | SDL_DOUBLEBUF));
 
     if(screen == NULL)
     {
