@@ -75,15 +75,15 @@ void blendFrame(SDL_Surface *surface, int x1, int x2, int y1, int y2, Uint8 r, U
 int drawing_box_x = 35;
 int drawing_box_y = 70;
 
-int char_view_length_half = 25;
-int char_view_x = 15;
-int char_view_y = 10;
+int char_view_number_half = 25;
+int char_view_y = 20;
+int char_view_margin = 20;
 
-int symbol_preview_x = 387;
+//int symbol_preview_x = 387;
 int symbol_preview_y = 70;
 
 int drawing_box_frame_width = 5;
-int symbol_preview_frame_width = 5;
+int symbol_preview_frame_width = 10;
 
 int symbol_w = 10;
 int symbol_h = 16;
@@ -201,6 +201,11 @@ void putSymbol(SDL_Surface *surface, char code, int x, int y, Uint8 r, Uint8 g, 
 	{
 		if (symbol[code][j * symbol_w * oversize + i])
 		{
+			/*addPixel24(surface, x + i / oversize - 1, y + j / oversize, 1, 1, b, 1.0 / oversize / oversize / 2);
+			addPixel24(surface, x + i / oversize, y + j / oversize, 1, 1, b, 1.0 / oversize / oversize / 2);
+			addPixel24(surface, x + i / oversize, y + j / oversize, 1, g, 1, 1.0 / oversize / oversize);
+			addPixel24(surface, x + i / oversize, y + j / oversize, r, 1, 1, 1.0 / oversize / oversize / 2);
+			addPixel24(surface, x + i / oversize + 1, y + j / oversize, r, 1, 1, 1.0 / oversize / oversize / 2);*/
 			addPixel24(surface, x + i / oversize, y + j / oversize, r, g, b, 1.0 / oversize / oversize);
 		}
 	}
@@ -233,7 +238,7 @@ int main(int argc, char* argv[])
     printf("Starting UI event loop.\n");
 
     SDL_Surface* screen;
-    screen = SDL_SetVideoMode(width, height, 24, SDL_HWSURFACE | /*SDL_FULLSCREEN |*/ SDL_DOUBLEBUF);
+    screen = SDL_SetVideoMode(width, height, 24, SDL_HWSURFACE | /*SDL_FULLSCREEN | */SDL_DOUBLEBUF);
 
     if(screen == NULL)
     {
@@ -450,6 +455,8 @@ void draw(SDL_Surface* surface)
 
 	// Currently char preview
 
+	int symbol_preview_x = width / 2 - symbol_w / 2 - symbol_preview_frame_width;
+
 	blendFrame(surface, symbol_preview_x, symbol_preview_x + symbol_w + 2 * symbol_preview_frame_width,
 	                    symbol_preview_y, symbol_preview_y + symbol_h + 2 * symbol_preview_frame_width, 255, 255, 255, 1);
 
@@ -458,14 +465,16 @@ void draw(SDL_Surface* surface)
 
 	// Drawing characters palette
 
+	char_view_number_half = (width - 2 * char_view_margin) / 2 / (symbol_w + 5);
 
-	for (int ch = current_char - char_view_length_half; ch <= current_char + char_view_length_half; ch++)
+	int char_view_left = (int)(width / 2 - (double)(symbol_w + 5) * (char_view_number_half + 0.5));
+	for (int ch = current_char - char_view_number_half; ch <= current_char + char_view_number_half; ch++)
 	{
-		int ind = ch - (current_char - char_view_length_half);
+		int ind = ch - (current_char - char_view_number_half);
 		int ch_ind = (ch + encoding_size) % encoding_size;
 
-		int x1 = char_view_x + (symbol_w + 5) * ind;
-		int x2 = char_view_x + (symbol_w + 5) * (ind + 1) - 1;
+		int x1 = char_view_left + (symbol_w + 5) * ind;
+		int x2 = char_view_left + (symbol_w + 5) * (ind + 1) - 1;
 		int y1 = char_view_y;
 		int y2 = char_view_y + symbol_h + 4;
 
