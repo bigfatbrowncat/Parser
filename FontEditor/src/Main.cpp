@@ -17,7 +17,7 @@ protected:
 	{
 		letterWidth = other.letterWidth;
 		letterHeight = other.letterHeight;
-		for (vector<bool*>::const_iterator iter = other.getLetters().begin(); iter != other.getLetters().end(); iter++)
+		for (vector<bool*>::const_iterator iter = other.getLettersBegin(); iter != other.getLettersEnd(); iter++)
 		{
 			bool* newChar = insert(letters.end());
 			memcpy(newChar, *iter, letterWidth * letterHeight * sizeof(bool));
@@ -29,10 +29,10 @@ public:
 	int getOverSize() const { return overSize; }
 	int getLetterWidth() const { return letterWidth; }
 	int getLetterHeight() const { return letterHeight; }
-	const vector<bool*>& getLetters() const
-	{
-		return letters;
-	}
+	const vector<bool*>::const_iterator getLettersBegin() const { return letters.begin(); }
+	const vector<bool*>::const_iterator getLettersEnd() const { return letters.end(); }
+	const vector<bool*>::iterator getLettersBegin() { return letters.begin(); }
+	const vector<bool*>::iterator getLettersEnd() { return letters.end(); }
 
 	// Constructors / destructor
 
@@ -111,7 +111,7 @@ public:
 
 		if (f != NULL)
 		{
-			for (vector<bool*>::const_iterator iter = letters.begin(); iter != letters.end(); iter++)
+			for (vector<bool*>::iterator iter = letters.begin(); iter != letters.end(); iter++)
 			{
 				for (int j = 0; j < letterHeight * overSize; j++)
 				{
@@ -255,7 +255,7 @@ enum color { black, white } painting_color;
 int painting_cell_x = -1, painting_cell_y = -1;
 
 void draw(SDL_Surface* surface, const Font& edited);
-void process_events(const Font& edited);
+void process_events(Font& edited);
 
 void putSymbol(SDL_Surface *surface, const Font& font, vector<bool*>::const_iterator iter, int x, int y, Uint8 r, Uint8 g, Uint8 b)
 {
@@ -282,12 +282,12 @@ void putSymbol(SDL_Surface *surface, const Font& font, vector<bool*>::const_iter
 	}
 }
 
-vector<bool*>::const_iterator currentLetter;
+vector<bool*>::iterator currentLetter;
 
 int main(int argc, char* argv[])
 {
 	Font& edited = *new Font("font.txt");
-	currentLetter = edited.getLetters().begin();
+	currentLetter = edited.getLettersBegin();
 
 	printf("Starting UI event loop.\n");
     fflush(stdout);
@@ -332,7 +332,7 @@ int main(int argc, char* argv[])
     edited.saveToFile("font.txt");
 }
 
-void process_events(const Font& edited)
+void process_events(Font& edited)
 {
 	/* Our SDL event placeholder. */
 	SDL_Event event;
@@ -352,22 +352,27 @@ void process_events(const Font& edited)
 			{
 				base_mode = false;
 			}
-			if (event.key.keysym.sym == SDLK_KP_PLUS)
+			if (event.key.keysym.sym == SDLK_RIGHT)
 			{
 				currentLetter++;
-				if (currentLetter == edited.getLetters().end()) currentLetter = edited.getLetters().begin();
+				if (currentLetter == edited.getLettersEnd()) currentLetter = edited.getLettersBegin();
 			}
-			if (event.key.keysym.sym == SDLK_KP_MINUS)
+			if (event.key.keysym.sym == SDLK_LEFT)
 			{
-				if (currentLetter == edited.getLetters().begin())
+				if (currentLetter == edited.getLettersBegin())
 				{
-					currentLetter = edited.getLetters().end() - 1;
+					currentLetter = edited.getLettersEnd() - 1;
 				}
 				else
 				{
 					currentLetter--;
 				}
 			}
+			if (event.key.keysym.sym == SDLK_INSERT)
+			{
+				edited.insert(currentLetter);
+			}
+
 			break;
 		case SDL_KEYUP:
 			if (event.key.keysym.sym == SDLK_LCTRL)
@@ -546,8 +551,8 @@ void draw(SDL_Surface* surface, const Font& edited)
 	vector<bool*>::const_iterator iter = currentLetter;
 	for (int i = 0; i < char_view_number_half; i++)
 	{
-		if (iter == edited.getLetters().begin())
-			iter = edited.getLetters().end() - 1;
+		if (iter == edited.getLettersBegin())
+			iter = edited.getLettersEnd() - 1;
 		else
 			iter --;
 	}
@@ -555,7 +560,7 @@ void draw(SDL_Surface* surface, const Font& edited)
 	for (int ind = 0; ind <= 2 * char_view_number_half; ind++)
 	{
 		iter++;
-		if (iter == edited.getLetters().end()) iter = edited.getLetters().begin();
+		if (iter == edited.getLettersEnd()) iter = edited.getLettersBegin();
 
 		int x1 = char_view_left + (edited.getLetterWidth() + 5) * ind;
 		int x2 = char_view_left + (edited.getLetterWidth() + 5) * (ind + 1) - 1;
