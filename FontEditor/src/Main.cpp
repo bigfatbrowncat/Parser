@@ -19,7 +19,7 @@ protected:
 		letterHeight = other.letterHeight;
 		for (vector<bool*>::const_iterator iter = other.getLettersBegin(); iter != other.getLettersEnd(); iter++)
 		{
-			bool* newChar = insert(letters.end());
+			bool* newChar = *insert(letters.end());
 			memcpy(newChar, *iter, letterWidth * letterHeight * sizeof(bool));
 		}
 	}
@@ -29,6 +29,7 @@ public:
 	int getOverSize() const { return overSize; }
 	int getLetterWidth() const { return letterWidth; }
 	int getLetterHeight() const { return letterHeight; }
+	int getLettersNumber() const { return letters.size(); }
 	const vector<bool*>::const_iterator getLettersBegin() const { return letters.begin(); }
 	const vector<bool*>::const_iterator getLettersEnd() const { return letters.end(); }
 	const vector<bool*>::iterator getLettersBegin() { return letters.begin(); }
@@ -85,7 +86,7 @@ public:
 		{
 			while (!feof(f))
 			{
-				bool* newChar = insert(letters.end());
+				bool* newChar = *insert(letters.end());
 				for (int j = 0; j < letterHeight * overSize; j++)
 				{
 					for (int i = 0; i < letterWidth * overSize; i++)
@@ -134,11 +135,11 @@ public:
 			return false;
 	}
 
-	bool* insert(vector<bool*>::iterator iter)
+	vector<bool*>::iterator insert(vector<bool*>::iterator iter)
 	{
 		bool* newChar = new bool[letterWidth * letterHeight * overSize * overSize];
-		letters.insert(iter, newChar);
-		return newChar;
+		for (int i = 0; i < letterWidth * letterHeight * overSize * overSize; i++) newChar[i] = false;
+		return letters.insert(iter, newChar);
 	}
 
 	void remove(vector<bool*>::iterator iter)
@@ -226,7 +227,6 @@ void blendFrame(SDL_Surface *surface, int x1, int x2, int y1, int y2, Uint8 r, U
 int drawing_box_x = 35;
 int drawing_box_y = 70;
 
-int char_view_number_half = 25;
 int char_view_y = 20;
 int char_view_margin = 20;
 
@@ -348,16 +348,16 @@ void process_events(Font& edited)
 			{
 				quit_pending = true;
 			}
-			if (event.key.keysym.sym == SDLK_LCTRL)
+			else if (event.key.keysym.sym == SDLK_LCTRL)
 			{
 				base_mode = false;
 			}
-			if (event.key.keysym.sym == SDLK_RIGHT)
+			else if (event.key.keysym.sym == SDLK_RIGHT)
 			{
 				currentLetter++;
 				if (currentLetter == edited.getLettersEnd()) currentLetter = edited.getLettersBegin();
 			}
-			if (event.key.keysym.sym == SDLK_LEFT)
+			else if (event.key.keysym.sym == SDLK_LEFT)
 			{
 				if (currentLetter == edited.getLettersBegin())
 				{
@@ -368,11 +368,20 @@ void process_events(Font& edited)
 					currentLetter--;
 				}
 			}
-			if (event.key.keysym.sym == SDLK_INSERT)
+			else if (event.key.keysym.sym == SDLK_INSERT)
 			{
-				edited.insert(currentLetter);
+				currentLetter = edited.insert(currentLetter);
 			}
+			else if (event.key.keysym.sym == SDLK_DELETE)
+			{
+				edited.remove(currentLetter);
+				if (edited.getLettersBegin() == edited.getLettersEnd())
+				{
+					edited.insert(edited.getLettersBegin());
+				}
 
+				if (currentLetter == edited.getLettersEnd()) currentLetter--;
+			}
 			break;
 		case SDL_KEYUP:
 			if (event.key.keysym.sym == SDLK_LCTRL)
@@ -544,12 +553,17 @@ void draw(SDL_Surface* surface, const Font& edited)
 
 	// Drawing characters palette
 
-	char_view_number_half = (width - 2 * char_view_margin) / 2 / (edited.getLetterWidth() + 5);
+	int char_view_number = (width - 2 * char_view_margin) / (edited.getLetterWidth() + 5);
+	if (edited.getLettersNumber() < char_view_number)
+	{
+		char_view_number = edited.getLettersNumber();
+	}
+	if (char_view_number % 2 == 0) char_view_number --;
 
-	int char_view_left = (int)(width / 2 - (double)(edited.getLetterWidth() + 5) * (char_view_number_half + 0.5));
+	int char_view_left = (int)(width / 2 - (double)(edited.getLetterWidth() + 5) * (((float)char_view_number - 1) / 2 + 0.5));
 
 	vector<bool*>::const_iterator iter = currentLetter;
-	for (int i = 0; i < char_view_number_half; i++)
+	for (int i = 0; i <= ((float)char_view_number - 1) / 2; i++)
 	{
 		if (iter == edited.getLettersBegin())
 			iter = edited.getLettersEnd() - 1;
@@ -557,7 +571,7 @@ void draw(SDL_Surface* surface, const Font& edited)
 			iter --;
 	}
 
-	for (int ind = 0; ind <= 2 * char_view_number_half; ind++)
+	for (int ind = 0; ind < char_view_number; ind++)
 	{
 		iter++;
 		if (iter == edited.getLettersEnd()) iter = edited.getLettersBegin();
